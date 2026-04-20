@@ -1,4 +1,5 @@
 # NexusBank AI ChatBot
+This project is a fictional proof-of-concept demo. It is not affiliated with, endorsed by, or associated with any real bank, financial institution, or commercial brand.
 
 Python 3.12 · Flask 3.x · Keycloak 26 PKCE · Anthropic Claude · SQLAlchemy · Bootstrap 5 Dark
 
