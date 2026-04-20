@@ -97,4 +97,4 @@ No production data, confidential business data, or live customer information is 
 
 ### Demo Data Notice
 
-The included `db-dump.sql` file contains synthetic demo data only. It is provided solely to help run and demonstrate the proof-of-concept locally.
+The included `db-dump.sql` or the `db-dump-sanitized.sql` file contains synthetic demo data only. It is provided solely to help run and demonstrate the proof-of-concept locally.
