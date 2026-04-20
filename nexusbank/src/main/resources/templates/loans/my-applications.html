@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='My Applications',activeNav='loans'"
+      xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-file-earmark-text me-2"></i>My Loan Applications</h1>
+            <p class="nb-page-subtitle">Track the status of your submitted applications</p>
+        </div>
+        <div class="nb-page-actions">
+            <a th:href="@{/loans/apply}" class="nb-btn nb-btn-gold">
+                <i class="bi bi-plus-circle me-1"></i>New Application
+            </a>
+        </div>
+    </div>
+
+    <!-- Application list -->
+    <div th:if="${applications != null and !applications.isEmpty()}" class="nb-fade-in nb-delay-1">
+        <div th:each="app, iStat : ${applications}"
+             class="nb-card nb-fade-in"
+             th:classappend="'nb-delay-' + ${iStat.index % 4 + 1}"
+             style="margin-bottom:12px;">
+            <div class="nb-card-body" style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+
+                <!-- Status icon -->
+                <div style="width:44px; height:44px; border-radius:10px; display:flex; align-items:center;
+                    justify-content:center; font-size:1.2rem; flex-shrink:0;"
+                     th:classappend="${app.applicationStatus.name() == 'PENDING'} ? 'nb-stat-icon gold' :
+                             (${app.applicationStatus.name() == 'APPROVED'} ? 'nb-stat-icon green' :
+                             (${app.applicationStatus.name() == 'DECLINED'} ? 'nb-stat-icon red' : 'nb-stat-icon blue'))">
+                    <i class="bi"
+                       th:classappend="${app.applicationStatus.name() == 'PENDING'} ? 'bi-clock' :
+                             (${app.applicationStatus.name() == 'APPROVED'} ? 'bi-check-circle' :
+                             (${app.applicationStatus.name() == 'DECLINED'} ? 'bi-x-circle' : 'bi-arrow-repeat'))"></i>
+                </div>
+
+                <!-- Main info -->
+                <div style="flex:1; min-width:200px;">
+                    <div style="font-weight:600; font-size:0.92rem;"
+                         th:text="${app.loanType.displayName + ' Application'}">Mortgage Application</div>
+                    <div class="nb-mono nb-text-muted" style="font-size:0.78rem;"
+                         th:text="${app.applicationNumber}">APP-XXX</div>
+                    <div class="nb-text-muted" style="font-size:0.78rem; margin-top:2px;"
+                         th:text="'Submitted ' + ${#temporals.format(app.submittedAt, 'MMM d, yyyy h:mm a')}">Date</div>
+                </div>
+
+                <!-- Amount & term -->
+                <div style="text-align:right; min-width:140px;">
+                    <div class="nb-mono" style="font-weight:600; font-size:0.95rem;"
+                         th:text="'$' + ${#numbers.formatDecimal(app.requestedAmount, 1, 'COMMA', 2, 'POINT')}">$0</div>
+                    <div class="nb-text-muted" style="font-size:0.78rem;"
+                         th:text="${app.requestedTermMonths + ' months'}">360 months</div>
+                </div>
+
+                <!-- Status badge -->
+                <div style="min-width:120px; text-align:center;">
+          <span class="nb-badge"
+                th:classappend="${app.applicationStatus.name() == 'PENDING'} ? 'nb-badge-warning' :
+                               (${app.applicationStatus.name() == 'APPROVED'} ? 'nb-badge-green' :
+                               (${app.applicationStatus.name() == 'DECLINED'} ? 'nb-badge-danger' :
+                               (${app.applicationStatus.name() == 'UNDER_REVIEW'} ? 'nb-badge-teal' : 'nb-badge-secondary')))"
+                th:text="${app.applicationStatus.displayName}">Pending</span>
+                </div>
+
+                <!-- View button -->
+                <a th:href="@{/loans/applications/{id}(id=${app.id})}"
+                   class="nb-btn nb-btn-outline nb-btn-sm">
+                    <i class="bi bi-eye me-1"></i>View
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty state -->
+    <div th:if="${applications == null or applications.isEmpty()}"
+         class="nb-card nb-fade-in nb-delay-1"
+         style="padding:60px 20px; text-align:center;">
+        <i class="bi bi-file-earmark-x" style="font-size:3rem; opacity:0.3;"></i>
+        <h3 style="margin-top:16px; font-size:1rem;">No Applications Yet</h3>
+        <p class="nb-text-muted" style="margin-top:8px;">
+            You haven't submitted any loan applications yet.
+        </p>
+        <a th:href="@{/loans/apply}" class="nb-btn nb-btn-gold" style="margin-top:20px; display:inline-flex;">
+            <i class="bi bi-plus-circle me-1"></i>Start an Application
+        </a>
+    </div>
+
+</th:block>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Customer Management',activeNav='customers'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-people me-2"></i>Customer Management</h1>
+            <p class="nb-page-subtitle">Active NexusBank customers — Banker &amp; Admin view</p>
+        </div>
+        <div class="nb-page-actions">
+        <span class="nb-badge nb-badge-secondary"
+              th:text="${customers != null ? customers.size() : 0} + ' active customers'">0 customers</span>
+            <input class="nb-input" type="text" id="cust-search" placeholder="Search name or email..."
+                   style="width:220px;" oninput="searchCustomers()"/>
+        </div>
+    </div>
+
+    <div class="nb-card nb-fade-in nb-delay-1">
+        <div class="nb-table-wrapper">
+            <table class="nb-table" id="cust-table">
+                <thead>
+                <tr>
+                    <th>Customer #</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Type</th>
+                    <th>KYC Status</th>
+                    <th class="text-end">Credit Score</th>
+                    <th>Employment</th>
+                    <th>Since</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="cust, iStat : ${customers}"
+                    class="nb-fade-in" th:classappend="'nb-delay-' + ${iStat.index % 5}"
+                    th:data-name="${cust.fullName}"
+                    th:data-email="${cust.email}">
+                    <td class="nb-mono nb-text-muted" th:text="${cust.customerNumber}">NBK-000001</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="nb-avatar" style="width:30px; height:30px; font-size:11px; flex-shrink:0;"
+                                 th:text="${cust.firstName.substring(0,1) + cust.lastName.substring(0,1)}">JH</div>
+                            <div>
+                                <div style="font-weight:600; font-size:0.85rem;" th:text="${cust.fullName}">Name</div>
+                                <div class="nb-text-muted" style="font-size:0.7rem;" th:if="${cust.middleName != null}"
+                                     th:text="'DOB: ' + ${#temporals.format(cust.dateOfBirth, 'MMM d, yyyy')}">DOB</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="nb-text-muted" style="font-size:0.82rem;" th:text="${cust.email}">email@example.com</td>
+                    <td>
+                <span class="nb-badge"
+                      th:classappend="${cust.customerType.name() == 'PREMIUM'} ? 'nb-badge-gold' : (${cust.customerType.name() == 'BUSINESS'} ? 'nb-badge-teal' : 'nb-badge-secondary')"
+                      th:text="${cust.customerType.name()}">RETAIL</span>
+                    </td>
+                    <td>
+                <span class="nb-badge"
+                      th:classappend="${cust.kycStatus.name() == 'VERIFIED'} ? 'nb-badge-green' : (${cust.kycStatus.name() == 'PENDING'} ? 'nb-badge-warning' : 'nb-badge-danger')"
+                      th:text="${cust.kycStatus.displayName}">Verified</span>
+                    </td>
+                    <td class="text-end nb-mono"
+                        th:classappend="${cust.creditScore != null and cust.creditScore >= 750} ? 'nb-amount-positive' : (${cust.creditScore != null and cust.creditScore >= 670} ? '' : 'nb-amount-negative')"
+                        th:text="${cust.creditScore != null ? cust.creditScore : 'N/A'}">750</td>
+                    <td class="nb-text-muted" style="font-size:0.82rem;" th:text="${cust.employmentStatus != null ? cust.employmentStatus : 'N/A'}">Employed</td>
+                    <td class="nb-mono nb-text-muted"
+                        th:text="${cust.createdAt != null ? #temporals.format(cust.createdAt, 'MMM yyyy') : 'N/A'}">Jan 2024</td>
+                    <td class="text-center">
+                        <div style="display:flex; gap:6px; justify-content:center;">
+                            <button class="nb-btn nb-btn-sm nb-btn-outline" disabled title="View Profile">
+                                <i class="bi bi-person"></i>
+                            </button>
+                            <button class="nb-btn nb-btn-sm nb-btn-outline" disabled title="View Accounts">
+                                <i class="bi bi-bank"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${customers == null or customers.isEmpty()}">
+                    <td colspan="9" class="text-center nb-text-muted py-4">No active customers found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</th:block>
+<script th:inline="javascript">
+    function searchCustomers() {
+      const q = document.getElementById('cust-search').value.toLowerCase();
+      document.querySelectorAll('#cust-table tbody tr[data-name]').forEach(row => {
+        const match = row.dataset.name.toLowerCase().includes(q) || row.dataset.email.toLowerCase().includes(q);
+        row.style.display = match ? '' : 'none';
+      });
+    }
+</script>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Admin Reports',activeNav='reports'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-bar-chart-line me-2"></i>Admin Reports</h1>
+            <p class="nb-page-subtitle">Portfolio overview and operational metrics — Admin only</p>
+        </div>
+        <div class="nb-page-actions">
+            <span class="nb-badge nb-badge-danger"><i class="bi bi-shield-lock me-1"></i>Admin Only</span>
+        </div>
+    </div>
+
+    <!-- KPI Strip -->
+    <div class="nb-grid-4 nb-fade-in nb-delay-1">
+        <div class="nb-stat-card gold">
+            <div class="nb-stat-icon gold"><i class="bi bi-people-fill"></i></div>
+            <div class="nb-stat-value" th:text="${totalCustomers}">0</div>
+            <div class="nb-stat-label">Total Customers</div>
+        </div>
+        <div class="nb-stat-card blue">
+            <div class="nb-stat-icon blue"><i class="bi bi-bank2"></i></div>
+            <div class="nb-stat-value" th:text="${totalAccounts}">0</div>
+            <div class="nb-stat-label">Total Accounts</div>
+        </div>
+        <div class="nb-stat-card purple">
+            <div class="nb-stat-icon purple"><i class="bi bi-cash-stack"></i></div>
+            <div class="nb-stat-value" th:text="${totalLoans}">0</div>
+            <div class="nb-stat-label">Total Loans</div>
+        </div>
+        <div class="nb-stat-card green">
+            <div class="nb-stat-icon green"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="nb-stat-value">N/A</div>
+            <div class="nb-stat-label">Portfolio Health</div>
+        </div>
+    </div>
+
+    <div class="nb-grid-2 mt-4">
+
+        <!-- Loan Summary by Type -->
+        <div class="nb-card nb-fade-in nb-delay-2">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-pie-chart me-2"></i>Loans by Type</h2>
+            </div>
+            <div class="nb-table-wrapper">
+                <table class="nb-table">
+                    <thead>
+                    <tr>
+                        <th>Loan Type</th>
+                        <th class="text-end">Count</th>
+                        <th class="text-end">Total Outstanding</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="row : ${loanSummary}">
+                        <td>
+                            <span class="nb-badge nb-badge-secondary" th:text="${row[0]}">Type</span>
+                        </td>
+                        <td class="text-end nb-mono" th:text="${row[1]}">0</td>
+                        <td class="text-end nb-mono nb-amount-negative"
+                            th:text="'$' + ${#numbers.formatDecimal(row[2], 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    </tr>
+                    <tr th:if="${loanSummary == null or loanSummary.isEmpty()}">
+                        <td colspan="3" class="text-center nb-text-muted py-4">No loan data available.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- System Info -->
+        <div class="nb-card nb-fade-in nb-delay-2">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-server me-2"></i>System Info</h2>
+            </div>
+            <div class="nb-detail-grid">
+                <div class="nb-detail-row">
+                    <span class="nb-detail-label">Platform</span>
+                    <span class="nb-detail-value nb-mono">NexusBank v1.0.0</span>
+                </div>
+                <div class="nb-detail-row">
+                    <span class="nb-detail-label">Framework</span>
+                    <span class="nb-detail-value nb-mono">Spring Boot 3.x</span>
+                </div>
+                <div class="nb-detail-row">
+                    <span class="nb-detail-label">Auth Provider</span>
+                    <span class="nb-detail-value nb-mono">Keycloak 26 (PKCE)</span>
+                </div>
+                <div class="nb-detail-row">
+                    <span class="nb-detail-label">Report Date</span>
+                    <span class="nb-detail-value nb-mono"
+                          th:text="${#temporals.format(#temporals.createNow(), 'MMM d, yyyy h:mm a')}">Now</span>
+                </div>
+                <div class="nb-detail-row">
+                    <span class="nb-detail-label">Environment</span>
+                    <span class="nb-detail-value"><span class="nb-badge nb-badge-warning">Development</span></span>
+                </div>
+            </div>
+
+            <div class="nb-card-body" style="border-top:1px solid var(--nb-border);">
+                <p class="nb-text-muted" style="font-size:0.82rem; margin-bottom:12px;">
+                    Advanced analytics, exportable reports, and audit logs are available in the full enterprise edition.
+                </p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="nb-btn nb-btn-outline nb-btn-sm" disabled><i class="bi bi-download me-1"></i>Export CSV</button>
+                    <button class="nb-btn nb-btn-outline nb-btn-sm" disabled><i class="bi bi-file-earmark-pdf me-1"></i>Export PDF</button>
+                    <button class="nb-btn nb-btn-outline nb-btn-sm" disabled><i class="bi bi-clock-history me-1"></i>Audit Log</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+</html>

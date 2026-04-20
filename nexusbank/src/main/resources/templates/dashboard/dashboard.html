@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Dashboard',activeNav='dashboard'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+  <!-- Page Header -->
+  <div class="nb-page-header nb-fade-in">
+    <div>
+      <h1 class="nb-page-title">Welcome back, <span th:if="${customer != null}" th:text="${customer.firstName}">Guest</span></h1>
+      <p class="nb-page-subtitle">Here's your financial overview for today</p>
+    </div>
+    <div class="nb-page-actions">
+      <span class="nb-badge nb-badge-gold" th:text="${customer.customerType.displayName}" th:if="${customer != null}">Premium</span>
+      <span class="nb-text-muted nb-mono" th:text="${#temporals.format(#temporals.createNow(), 'MMMM d, yyyy')}">April 14, 2026</span>
+    </div>
+  </div>
+
+  <!-- KYC Warning Banner -->
+  <div class="nb-alert nb-alert-warning nb-fade-in nb-delay-1"
+       th:if="${customer != null and customer.kycStatus.name() != 'VERIFIED'}">
+    <i class="bi bi-shield-exclamation"></i>
+    <span>Your identity verification is <strong th:text="${customer.kycStatus.displayName}">Pending</strong>.
+        Some features may be restricted until verification is complete.</span>
+    <a href="#" class="nb-btn nb-btn-sm nb-btn-warning ms-auto">Complete Verification</a>
+  </div>
+
+  <!-- Summary Stat Cards -->
+  <div class="nb-grid-4 nb-fade-in nb-delay-1">
+    <div class="nb-stat-card">
+      <div class="nb-stat-label"><i class="bi bi-wallet2 me-1"></i>Total Deposits</div>
+      <div class="nb-stat-value nb-amount-positive"
+           th:text="${#numbers.formatDecimal(totalDeposits, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+      <div class="nb-stat-sub">Across <span th:text="${depositAccountCount}">0</span> accounts</div>
+    </div>
+    <div class="nb-stat-card">
+      <div class="nb-stat-label"><i class="bi bi-credit-card me-1"></i>Outstanding Loans</div>
+      <div class="nb-stat-value nb-amount-negative"
+           th:text="${#numbers.formatDecimal(totalLoanBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+      <div class="nb-stat-sub"><span th:text="${activeLoanCount}">0</span> active obligations</div>
+    </div>
+    <div class="nb-stat-card">
+      <div class="nb-stat-label"><i class="bi bi-graph-up-arrow me-1"></i>Net Worth (Bank)</div>
+      <div class="nb-stat-value"
+           th:classappend="${netWorth >= 0} ? 'nb-amount-positive' : 'nb-amount-negative'"
+           th:text="${#numbers.formatDecimal(netWorth, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+      <div class="nb-stat-sub">Deposits minus loan balances</div>
+    </div>
+    <div class="nb-stat-card">
+      <div class="nb-stat-label"><i class="bi bi-star me-1"></i>Credit Score</div>
+      <div class="nb-stat-value"
+           th:classappend="${customer != null and customer.creditScore != null and customer.creditScore >= 750} ? 'nb-amount-positive' : (${customer != null and customer.creditScore != null and customer.creditScore >= 670} ? '' : 'nb-amount-negative')"
+           th:text="${customer != null and customer.creditScore != null ? customer.creditScore : 'N/A'}">--</div>
+      <div class="nb-stat-sub"
+           th:text="${customer != null and customer.creditScore != null and customer.creditScore >= 750} ? 'Excellent' : (${customer != null and customer.creditScore != null and customer.creditScore >= 700} ? 'Good' : (${customer != null and customer.creditScore != null and customer.creditScore >= 670} ? 'Fair' : 'Building'))">--</div>
+    </div>
+  </div>
+
+  <!-- Accounts + Loans Side by Side -->
+  <div class="nb-grid-2 mt-4">
+
+    <!-- Accounts Column -->
+    <div>
+      <div class="nb-section-header nb-fade-in nb-delay-2">
+        <h2 class="nb-section-title"><i class="bi bi-bank me-2"></i>My Accounts</h2>
+        <a th:href="@{/nexusbank/accounts}" class="nb-link-gold">View all <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div th:each="acct, iStat : ${accounts}" th:if="${iStat.index < 4}"
+           class="nb-account-card nb-fade-in"
+           th:classappend="'nb-delay-' + ${iStat.index + 2}">
+        <div class="nb-account-card-header">
+          <div>
+            <div class="nb-account-name" th:text="${acct.nickname != null ? acct.nickname : acct.accountProduct.productName}">Checking</div>
+            <div class="nb-account-number" th:text="${acct.maskedAccountNumber}">••••1234</div>
+          </div>
+          <span class="nb-badge"
+                th:classappend="${acct.accountStatus.name() == 'ACTIVE'} ? 'nb-badge-green' : 'nb-badge-warning'"
+                th:text="${acct.accountStatus.displayName}">Active</span>
+        </div>
+        <div class="nb-account-balance" th:text="'$' + ${#numbers.formatDecimal(acct.currentBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+        <div class="nb-account-meta">
+          <span th:text="${acct.accountProduct.productType.displayName}">Checking</span>
+          <span th:if="${acct.annualPercentageYield != null}"
+                th:text="${#numbers.formatDecimal(acct.annualPercentageYield, 1, 'NONE', 2, 'POINT')} + '% APY'">0.00% APY</span>
+        </div>
+        <a th:href="@{/nexusbank/accounts/{id}(id=${acct.id})}" class="nb-btn nb-btn-sm nb-btn-ghost mt-2">View Details</a>
+      </div>
+      <div th:if="${accounts == null or accounts.isEmpty()}" class="nb-empty-state nb-fade-in nb-delay-3">
+        <i class="bi bi-bank2"></i>
+        <p>No accounts found. Contact your banker to open an account.</p>
+      </div>
+    </div>
+
+    <!-- Loans Column -->
+    <div>
+      <div class="nb-section-header nb-fade-in nb-delay-2">
+        <h2 class="nb-section-title"><i class="bi bi-house-door me-2"></i>My Loans</h2>
+        <a th:href="@{/nexusbank/loans}" class="nb-link-gold">View all <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div th:each="loan, iStat : ${loans}" th:if="${iStat.index < 3}"
+           class="nb-loan-card nb-fade-in"
+           th:classappend="'nb-delay-' + ${iStat.index + 2}">
+        <div class="nb-loan-card-header">
+          <div>
+            <div class="nb-loan-type-badge"
+                 th:classappend="${loan.loanType.name() == 'MORTGAGE'} ? 'nb-loan-mortgage' : (${loan.loanType.name() == 'AUTO'} ? 'nb-loan-auto' : (${loan.loanType.name().startsWith('STUDENT')} ? 'nb-loan-student' : 'nb-loan-personal'))">
+              <i class="bi"
+                 th:classappend="${loan.loanType.name() == 'MORTGAGE'} ? 'bi-house-fill' : (${loan.loanType.name() == 'AUTO'} ? 'bi-car-front-fill' : (${loan.loanType.name().startsWith('STUDENT')} ? 'bi-mortarboard-fill' : 'bi-cash-stack'))"></i>
+              <span th:text="${loan.loanType.displayName}">Mortgage</span>
+            </div>
+            <div class="nb-loan-number nb-mono" th:text="${loan.loanNumber}">LN-0001</div>
+          </div>
+          <span class="nb-badge"
+                th:classappend="${loan.loanStatus.name() == 'CURRENT'} ? 'nb-badge-green' : (${loan.loanStatus.name() == 'PAID_OFF'} ? 'nb-badge-secondary' : 'nb-badge-warning')"
+                th:text="${loan.loanStatus.displayName}">Current</span>
+        </div>
+        <div class="nb-grid-2 mt-2" style="gap: 0.5rem;">
+          <div>
+            <div class="nb-text-muted" style="font-size: 0.7rem;">OUTSTANDING</div>
+            <div class="nb-amount-negative nb-mono" th:text="'$' + ${#numbers.formatDecimal(loan.outstandingBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+          </div>
+          <div>
+            <div class="nb-text-muted" style="font-size: 0.7rem;">MONTHLY PAYMENT</div>
+            <div class="nb-mono" th:text="'$' + ${#numbers.formatDecimal(loan.monthlyPaymentAmount, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+          </div>
+        </div>
+        <div class="mt-2">
+          <div class="nb-progress-label">
+            <span>Paid off</span>
+            <span th:text="${loan.progressPercent} + '%'">0%</span>
+          </div>
+          <div class="nb-progress-bar">
+            <div class="nb-progress-fill" th:style="'width: ' + ${loan.progressPercent} + '%'"></div>
+          </div>
+        </div>
+        <a th:href="@{/nexusbank/loans/{id}(id=${loan.id})}" class="nb-btn nb-btn-sm nb-btn-ghost mt-2">View Details</a>
+      </div>
+      <div th:if="${loans == null or loans.isEmpty()}" class="nb-empty-state nb-fade-in nb-delay-3">
+        <i class="bi bi-cash-coin"></i>
+        <p>No active loans. Apply for a mortgage, auto, or personal loan.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="nb-card nb-fade-in nb-delay-3 mt-4">
+    <div class="nb-card-header">
+      <h2 class="nb-section-title mb-0"><i class="bi bi-clock-history me-2"></i>Recent Transactions</h2>
+      <a th:href="@{/nexusbank/accounts}" class="nb-link-gold">View all accounts</a>
+    </div>
+    <div class="nb-table-wrapper">
+      <table class="nb-table">
+        <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Category</th>
+          <th>Account</th>
+          <th class="text-end">Amount</th>
+          <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="txn, iStat : ${recentTransactions}" th:if="${iStat.index < 10}"
+            class="nb-fade-in" th:classappend="'nb-delay-' + ${iStat.index}">
+          <td class="nb-mono nb-text-muted" th:text="${#temporals.format(txn.transactionDate, 'MMM d, yyyy')}">Apr 14</td>
+          <td>
+            <div th:text="${txn.description}">Transaction</div>
+            <div class="nb-text-muted" style="font-size:0.72rem;" th:if="${txn.merchantName != null}" th:text="${txn.merchantName}"></div>
+          </td>
+          <td>
+                <span class="nb-badge nb-badge-secondary"
+                      th:text="${txn.transactionCategory != null ? txn.transactionCategory.categoryName : 'Uncategorized'}">Category</span>
+          </td>
+          <td class="nb-mono nb-text-muted" th:text="${txn.account.maskedAccountNumber}">••••1234</td>
+          <td class="text-end nb-mono"
+              th:classappend="${txn.transactionType.name() == 'CREDIT'} ? 'nb-amount-positive' : 'nb-amount-negative'"
+              th:text="${txn.transactionType.name() == 'CREDIT' ? '+' : '-'} + '$' + ${#numbers.formatDecimal(txn.amount, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+          <td>
+                <span class="nb-badge"
+                      th:classappend="${txn.status.name() == 'POSTED'} ? 'nb-badge-green' : (${txn.status.name() == 'PENDING'} ? 'nb-badge-warning' : 'nb-badge-secondary')"
+                      th:text="${txn.status.displayName}">Posted</span>
+          </td>
+        </tr>
+        <tr th:if="${recentTransactions == null or recentTransactions.isEmpty()}">
+          <td colspan="6" class="text-center nb-text-muted py-4">No recent transactions</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Alerts Section -->
+  <div class="nb-fade-in nb-delay-4 mt-4" th:if="${alerts != null and !alerts.isEmpty()}">
+    <div class="nb-section-header">
+      <h2 class="nb-section-title"><i class="bi bi-bell me-2"></i>Alerts &amp; Notifications</h2>
+    </div>
+    <div th:each="alert : ${alerts}" class="nb-alert"
+         th:classappend="${alert.alertType.name().contains('LOW_BALANCE') or alert.alertType.name().contains('OVERDUE')} ? 'nb-alert-warning' : 'nb-alert-info'">
+      <i class="bi" th:classappend="${alert.alertType.name().contains('LOW_BALANCE')} ? 'bi-exclamation-triangle' : 'bi-info-circle'"></i>
+      <span th:text="${alert.message}">Alert message</span>
+      <span class="nb-text-muted ms-auto nb-mono" style="font-size:0.75rem;"
+            th:text="${#temporals.format(alert.createdAt, 'MMM d')}">Apr 14</span>
+    </div>
+  </div>
+
+</th:block>
+</html>

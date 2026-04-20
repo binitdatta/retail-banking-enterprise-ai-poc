@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Loan Calculator',activeNav='loans'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-calculator me-2"></i>Loan Calculator</h1>
+            <p class="nb-page-subtitle">Estimate monthly payments and total interest cost</p>
+        </div>
+    </div>
+
+    <div class="nb-grid-2-1 nb-fade-in nb-delay-1">
+
+        <!-- Calculator Inputs -->
+        <div class="nb-card">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-sliders me-2"></i>Loan Parameters</h2>
+            </div>
+            <div class="nb-card-body">
+
+                <div style="margin-bottom:20px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Loan Type</label>
+                    <select class="nb-select" id="loanType" style="width:100%; margin-top:8px;" onchange="calculate()">
+                        <option value="MORTGAGE">Mortgage</option>
+                        <option value="AUTO">Auto Loan</option>
+                        <option value="STUDENT">Student Loan</option>
+                        <option value="PERSONAL" selected>Personal Loan</option>
+                        <option value="HELOC">HELOC</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">
+                        Loan Amount: <span id="amountDisplay" style="color:var(--nb-gold);">$25,000</span>
+                    </label>
+                    <input type="range" id="loanAmount" min="1000" max="1000000" step="1000" value="25000"
+                           style="width:100%; margin-top:10px; accent-color:var(--nb-gold);"
+                           oninput="document.getElementById('amountDisplay').textContent='$'+Number(this.value).toLocaleString(); calculate()"/>
+                    <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--nb-text-muted); margin-top:4px;">
+                        <span>$1,000</span><span>$1,000,000</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">
+                        Interest Rate: <span id="rateDisplay" style="color:var(--nb-gold);">7.50%</span>
+                    </label>
+                    <input type="range" id="interestRate" min="1" max="25" step="0.25" value="7.5"
+                           style="width:100%; margin-top:10px; accent-color:var(--nb-gold);"
+                           oninput="document.getElementById('rateDisplay').textContent=Number(this.value).toFixed(2)+'%'; calculate()"/>
+                    <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--nb-text-muted); margin-top:4px;">
+                        <span>1.00%</span><span>25.00%</span>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:24px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">
+                        Loan Term: <span id="termDisplay" style="color:var(--nb-gold);">60 months</span>
+                    </label>
+                    <input type="range" id="loanTerm" min="6" max="360" step="6" value="60"
+                           style="width:100%; margin-top:10px; accent-color:var(--nb-gold);"
+                           oninput="document.getElementById('termDisplay').textContent=this.value+' months ('+Math.round(this.value/12*10)/10+' yrs)'; calculate()"/>
+                    <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--nb-text-muted); margin-top:4px;">
+                        <span>6 mo</span><span>360 mo (30 yr)</span>
+                    </div>
+                </div>
+
+                <div class="nb-alert nb-alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <span style="font-size:0.8rem;">Estimates are for illustrative purposes only. Actual rates depend on credit score, LTV, and underwriting criteria.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div>
+            <div class="nb-card" style="margin-bottom:16px;">
+                <div class="nb-card-header">
+                    <h2 class="nb-section-title mb-0"><i class="bi bi-graph-up me-2"></i>Results</h2>
+                </div>
+                <div class="nb-card-body" style="text-align:center;">
+                    <div style="margin-bottom:20px;">
+                        <div class="nb-text-muted" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Monthly Payment</div>
+                        <div id="monthlyPayment" style="font-family:'DM Mono',monospace; font-size:2.2rem; font-weight:600; color:var(--nb-gold);">$490.56</div>
+                    </div>
+                    <div class="nb-divider"></div>
+                    <div class="nb-grid-2" style="gap:12px; margin-top:16px;">
+                        <div style="background:var(--nb-bg-elevated); border-radius:10px; padding:14px;">
+                            <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase; margin-bottom:6px;">Total Paid</div>
+                            <div id="totalPaid" class="nb-mono" style="font-size:1rem; font-weight:600;">$29,433.60</div>
+                        </div>
+                        <div style="background:var(--nb-bg-elevated); border-radius:10px; padding:14px;">
+                            <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase; margin-bottom:6px;">Total Interest</div>
+                            <div id="totalInterest" class="nb-mono nb-amount-negative" style="font-size:1rem; font-weight:600;">$4,433.60</div>
+                        </div>
+                        <div style="background:var(--nb-bg-elevated); border-radius:10px; padding:14px;">
+                            <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase; margin-bottom:6px;">Principal</div>
+                            <div id="principalDisplay" class="nb-mono nb-amount-positive" style="font-size:1rem; font-weight:600;">$25,000</div>
+                        </div>
+                        <div style="background:var(--nb-bg-elevated); border-radius:10px; padding:14px;">
+                            <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase; margin-bottom:6px;">Interest %</div>
+                            <div id="interestPct" class="nb-mono" style="font-size:1rem; font-weight:600;">15.1%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment breakdown bar -->
+            <div class="nb-card">
+                <div class="nb-card-header">
+                    <h2 class="nb-section-title mb-0">Payment Breakdown</h2>
+                </div>
+                <div class="nb-card-body">
+                    <div style="height:18px; border-radius:999px; overflow:hidden; display:flex; margin-bottom:12px;">
+                        <div id="principalBar" style="background:var(--nb-green); height:100%; transition:width 0.4s ease; width:84.9%;"></div>
+                        <div id="interestBar" style="background:var(--nb-red); height:100%; transition:width 0.4s ease; flex:1;"></div>
+                    </div>
+                    <div style="display:flex; gap:20px; font-size:0.78rem;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <div style="width:10px; height:10px; border-radius:2px; background:var(--nb-green);"></div>
+                            <span class="nb-text-muted">Principal</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <div style="width:10px; height:10px; border-radius:2px; background:var(--nb-red);"></div>
+                            <span class="nb-text-muted">Interest Cost</span>
+                        </div>
+                    </div>
+                    <div class="nb-divider"></div>
+                    <a th:href="@{/loans/apply}" class="nb-btn nb-btn-gold" style="width:100%;">
+                        <i class="bi bi-plus-circle me-1"></i>Apply for This Loan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+<script th:inline="javascript">
+    function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+    function calculate() {
+      const P = parseFloat(document.getElementById('loanAmount').value);
+      const r = parseFloat(document.getElementById('interestRate').value) / 100 / 12;
+      const n = parseInt(document.getElementById('loanTerm').value);
+
+      let monthly;
+      if (r === 0) {
+        monthly = P / n;
+      } else {
+        monthly = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+      }
+      const total    = monthly * n;
+      const interest = total - P;
+      const intPct   = (interest / total * 100).toFixed(1);
+      const prinPct  = (100 - parseFloat(intPct)).toFixed(1);
+
+      document.getElementById('monthlyPayment').textContent  = fmt(monthly);
+      document.getElementById('totalPaid').textContent       = fmt(total);
+      document.getElementById('totalInterest').textContent   = fmt(interest);
+      document.getElementById('principalDisplay').textContent= fmt(P);
+      document.getElementById('interestPct').textContent     = intPct + '%';
+      document.getElementById('principalBar').style.width    = prinPct + '%';
+    }
+
+    calculate();
+</script>
+</html>

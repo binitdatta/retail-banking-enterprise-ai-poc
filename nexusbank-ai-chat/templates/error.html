@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Error — NexusBank{% endblock %}
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height:70vh;">
+    <div class="text-center nb-error-block">
+        <i class="bi bi-exclamation-circle nb-error-icon text-danger mb-4"></i>
+        <h2 class="fw-bold mb-3">Something went wrong</h2>
+        <p class="text-muted mb-4 mx-auto" style="max-width:420px;">
+            {{ message or "An unexpected error occurred. Please try again." }}
+        </p>
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="{{ url_for('main.index') }}" class="btn nb-btn-outline-lg">
+                <i class="bi bi-house me-2"></i>Go Home
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn nb-btn-primary-lg">
+                <i class="bi bi-shield-lock me-2"></i>Sign In
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

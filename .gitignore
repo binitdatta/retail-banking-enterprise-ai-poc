@@ -1,0 +1,62 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# Flask/local secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log
+logs/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Spring Boot / Java
+target/
+build/
+.gradle/
+out/
+*.class
+
+# Spring config with secrets
+application-local.properties
+application-local.yml
+application-dev.properties
+application-dev.yml
+application-prod.properties
+application-prod.yml
+bootstrap-local.properties
+bootstrap-local.yml
+
+# Sensitive config folders/files
+config/secrets/
+secrets/
+*.jks
+*.p12
+*.keystore
+
+# Database dumps / local exports
+
+# Backup files
+*.old
+*.bak
+*~

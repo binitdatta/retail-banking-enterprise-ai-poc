@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Transactions',activeNav='transactions'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-arrow-left-right me-2"></i>Transactions</h1>
+            <p class="nb-page-subtitle">All transactions across your accounts</p>
+        </div>
+        <div class="nb-page-actions">
+            <select class="nb-select" id="acct-filter">
+                <option value="">All Accounts</option>
+                <option th:each="acct : ${accounts}"
+                        th:value="${acct.id}"
+                        th:text="${acct.maskedAccountNumber}">••••1234</option>
+            </select>
+            <select class="nb-select" id="type-filter">
+                <option value="">All Types</option>
+                <option value="CREDIT">Credits</option>
+                <option value="DEBIT">Debits</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="nb-card nb-fade-in nb-delay-1">
+        <div class="nb-table-wrapper">
+            <table class="nb-table" id="txn-table">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Account</th>
+                    <th>Category</th>
+                    <th>Channel</th>
+                    <th class="text-end">Amount</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="txn, iStat : ${transactions}"
+                    th:data-acct="${txn.account.id}"
+                    th:data-type="${txn.transactionType.name()}"
+                    class="nb-fade-in" th:classappend="'nb-delay-' + ${iStat.index % 5}">
+                    <td>
+                        <div class="nb-mono" th:text="${#temporals.format(txn.transactionDate, 'MMM d, yyyy')}">Date</div>
+                    </td>
+                    <td>
+                        <div th:text="${txn.description}">Description</div>
+                        <div class="nb-text-muted" style="font-size:0.72rem;"
+                             th:if="${txn.merchantName != null}" th:text="${txn.merchantName}"></div>
+                    </td>
+                    <td class="nb-mono nb-text-muted" th:text="${txn.account.maskedAccountNumber}">••••1234</td>
+                    <td>
+                <span class="nb-badge nb-badge-secondary"
+                      th:text="${txn.transactionCategory != null ? txn.transactionCategory.categoryName : 'Uncategorized'}">Category</span>
+                    </td>
+                    <td>
+                <span class="nb-badge nb-badge-secondary"
+                      th:text="${txn.channel != null ? txn.channel.displayName : 'N/A'}">Channel</span>
+                    </td>
+                    <td class="text-end nb-mono"
+                        th:classappend="${txn.transactionType.name() == 'CREDIT'} ? 'nb-amount-positive' : 'nb-amount-negative'"
+                        th:text="${txn.transactionType.name() == 'CREDIT' ? '+' : '-'} + '$' + ${#numbers.formatDecimal(txn.amount, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td>
+                <span class="nb-badge"
+                      th:classappend="${txn.status.name() == 'POSTED'} ? 'nb-badge-green' : (${txn.status.name() == 'PENDING'} ? 'nb-badge-warning' : 'nb-badge-secondary')"
+                      th:text="${txn.status.displayName}">Posted</span>
+                    </td>
+                </tr>
+                <tr th:if="${transactions == null or transactions.isEmpty()}">
+                    <td colspan="7" class="text-center nb-text-muted py-4">No transactions found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</th:block>
+<script th:inline="javascript">
+    function applyFilters() {
+      const acct  = document.getElementById('acct-filter').value;
+      const type  = document.getElementById('type-filter').value;
+      document.querySelectorAll('#txn-table tbody tr[data-acct]').forEach(row => {
+        const matchAcct = !acct || row.dataset.acct === acct;
+        const matchType = !type || row.dataset.type === type;
+        row.style.display = matchAcct && matchType ? '' : 'none';
+      });
+    }
+    document.getElementById('acct-filter').addEventListener('change', applyFilters);
+    document.getElementById('type-filter').addEventListener('change', applyFilters);
+</script>
+</html>

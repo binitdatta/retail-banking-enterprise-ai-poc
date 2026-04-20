@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Application Submitted',activeNav='loans'"
+      xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="content">
+
+    <div style="max-width:640px; margin:60px auto; text-align:center;" class="nb-fade-in">
+
+        <div style="width:72px; height:72px; border-radius:50%; background:rgba(34,197,94,0.12);
+                border:2px solid rgba(34,197,94,0.3); display:flex; align-items:center;
+                justify-content:center; margin:0 auto 24px; font-size:2rem; color:var(--nb-green);">
+            <i class="bi bi-check-lg"></i>
+        </div>
+
+        <h1 style="font-size:1.6rem; font-weight:700; margin-bottom:12px;">Application Submitted!</h1>
+
+        <p class="nb-text-muted" style="font-size:0.95rem; line-height:1.7; margin-bottom:28px;">
+            Your mortgage application has been received and assigned to our lending team.
+            A banker will review your application and contact you within
+            <strong style="color:var(--nb-gold);">2 business days</strong>.
+        </p>
+
+        <!-- Application number -->
+        <div th:if="${applicationNumber}"
+             class="nb-card" style="margin-bottom:28px; background:rgba(61,111,212,0.06);">
+            <div class="nb-card-body" style="padding:20px;">
+                <div class="nb-text-muted" style="font-size:0.75rem; text-transform:uppercase;
+             letter-spacing:0.08em; margin-bottom:8px;">Application Reference Number</div>
+                <div class="nb-mono" style="font-size:1.3rem; font-weight:700; color:var(--nb-gold);"
+                     th:text="${applicationNumber}">APP-20260415-1234</div>
+                <div class="nb-text-muted" style="font-size:0.78rem; margin-top:6px;">
+                    Save this number for your records and any follow-up inquiries.
+                </div>
+            </div>
+        </div>
+
+        <!-- What happens next -->
+        <div class="nb-card" style="margin-bottom:28px; text-align:left;">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-list-check me-2"></i>What Happens Next</h2>
+            </div>
+            <div class="nb-card-body">
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div style="display:flex; gap:14px; align-items:flex-start;">
+                        <div style="width:28px; height:28px; border-radius:50%; background:rgba(61,111,212,0.15);
+                        color:var(--nb-blue-light); display:flex; align-items:center;
+                        justify-content:center; font-size:0.78rem; font-weight:700; flex-shrink:0;">1</div>
+                        <div>
+                            <div style="font-size:0.88rem; font-weight:600;">Initial Review</div>
+                            <div class="nb-text-muted" style="font-size:0.8rem;">A loan officer will review your application details and verify your information on file.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:14px; align-items:flex-start;">
+                        <div style="width:28px; height:28px; border-radius:50%; background:rgba(61,111,212,0.15);
+                        color:var(--nb-blue-light); display:flex; align-items:center;
+                        justify-content:center; font-size:0.78rem; font-weight:700; flex-shrink:0;">2</div>
+                        <div>
+                            <div style="font-size:0.88rem; font-weight:600;">Underwriting</div>
+                            <div class="nb-text-muted" style="font-size:0.8rem;">Your application moves to underwriting for a full credit and property assessment.</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:14px; align-items:flex-start;">
+                        <div style="width:28px; height:28px; border-radius:50%; background:rgba(61,111,212,0.15);
+                        color:var(--nb-blue-light); display:flex; align-items:center;
+                        justify-content:center; font-size:0.78rem; font-weight:700; flex-shrink:0;">3</div>
+                        <div>
+                            <div style="font-size:0.88rem; font-weight:600;">Decision</div>
+                            <div class="nb-text-muted" style="font-size:0.8rem;">You will receive a decision notification via email and within your NexusBank portal.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:12px; justify-content:center;">
+            <a th:href="@{/loans/applications/my}" class="nb-btn nb-btn-primary">
+                <i class="bi bi-file-earmark-text me-1"></i>View My Applications
+            </a>
+            <a th:href="@{/dashboard}" class="nb-btn nb-btn-outline">
+                <i class="bi bi-house me-1"></i>Back to Dashboard
+            </a>
+        </div>
+
+    </div>
+
+</th:block>
+</html>

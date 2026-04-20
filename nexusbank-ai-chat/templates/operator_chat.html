@@ -1,0 +1,464 @@
+{% extends "base.html" %}
+{% block title %}Operator Console — NexusBank{% endblock %}
+
+{% block content %}
+<div class="nb-chat-layout">
+
+    <!-- ── SIDEBAR ──────────────────────────────────────────────────────── -->
+    <aside class="nb-sidebar" id="nbSidebar">
+        <div class="nb-sidebar-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="nb-avatar-lg nb-avatar-operator">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold">{{ operator_username }}</div>
+                    <div class="small text-muted">Bank Operator</div>
+                    <span class="nb-badge-type nb-type-operator">ADMIN</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operations menu -->
+        <div class="nb-sidebar-section">
+            <div class="nb-sidebar-section-title">
+                <i class="bi bi-gear me-2"></i>Operations
+            </div>
+            <div class="d-flex flex-column gap-2">
+                {% set ops = [
+                    ("bi-plus-circle",     "I want to open a new account for a customer"),
+                    ("bi-person-gear",     "I need to update a customer profile"),
+                    ("bi-bell-fill",       "Post an alert notification to a customer"),
+                    ("bi-toggle-on",       "Change the status of an account"),
+                    ("bi-file-earmark-plus","Create a new loan application for a customer"),
+                ] %}
+                {% for icon, prompt in ops %}
+                <button class="nb-quick-btn nb-op-btn" onclick="askAbout('{{ prompt }}')">
+                    <i class="bi {{ icon }} me-2"></i>{{ prompt[:46] }}{% if prompt|length > 46 %}…{% endif %}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Available products -->
+        <div class="nb-sidebar-section">
+            <div class="nb-sidebar-section-title">
+                <i class="bi bi-wallet2 me-2"></i>Account Products
+            </div>
+            {% for p in products %}
+            <div class="nb-product-row">
+                <span class="nb-product-code">{{ p.product_code }}</span>
+                <span class="small text-muted">{{ p.product_name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="nb-sidebar-section">
+            <div class="nb-sidebar-section-title">
+                <i class="bi bi-bank me-2"></i>Loan Products
+            </div>
+            {% for lp in loan_products %}
+            <div class="nb-product-row">
+                <span class="nb-product-code">{{ lp.product_code }}</span>
+                <span class="small text-muted">{{ lp.product_name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button class="nb-sidebar-close d-lg-none" id="sidebarClose">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </aside>
+
+    <!-- ── CHAT PANEL ────────────────────────────────────────────────────── -->
+    <div class="nb-chat-panel d-flex flex-column">
+
+        <div class="nb-chat-toolbar">
+            <button class="btn btn-sm nb-icon-btn d-lg-none me-2" id="sidebarToggle">
+                <i class="bi bi-layout-sidebar"></i>
+            </button>
+            <div class="d-flex align-items-center gap-2">
+                <div class="nb-ai-status-dot nb-dot-operator"></div>
+                <div>
+                    <div class="fw-semibold small">NexusBank Operator Console</div>
+                    <div class="text-muted" style="font-size:0.7rem;">
+                        Write operations · Confirm before execute
+                    </div>
+                </div>
+            </div>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <span class="nb-operator-badge">
+                    <i class="bi bi-shield-lock me-1"></i>Admin Access
+                </span>
+                <a href="{{ url_for('main.index') }}" class="btn btn-sm nb-icon-btn" title="Home">
+                    <i class="bi bi-house"></i>
+                </a>
+                <button class="btn btn-sm nb-icon-btn" onclick="clearChat()" title="Clear">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="nb-messages flex-grow-1" id="messagesContainer">
+            {% if not history %}
+            <div class="nb-welcome" id="welcomeBlock">
+                <div class="nb-welcome-icon nb-welcome-icon-operator">
+                    <i class="bi bi-shield-lock"></i>
+                </div>
+                <h4 class="fw-bold mb-2">Operator Console</h4>
+                <p class="text-muted mb-4">
+                    Perform banking operations through natural language.
+                    I'll collect all required details and ask you to confirm
+                    before executing any changes.
+                </p>
+                <div class="nb-welcome-chips d-flex flex-wrap gap-2 justify-content-center">
+                    {% for q in [
+                        "Open an account",
+                        "Update a profile",
+                        "Post an alert",
+                        "Change account status",
+                    ] %}
+                    <button class="nb-chip-btn" onclick="askAbout('I want to {{ q | lower }}')">
+                        {{ q }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% for msg in history %}
+                {% if msg.role == 'user' and not msg.content.startswith('[SYSTEM]') %}
+                <div class="nb-msg-row nb-msg-row-user">
+                    <div class="nb-bubble-user">{{ msg.content }}</div>
+                    <div class="nb-avatar-sm nb-avatar-sm-operator">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                </div>
+                {% elif not msg.content.startswith('[SYSTEM]') %}
+                <div class="nb-msg-row nb-msg-row-ai">
+                    <div class="nb-avatar-ai-sm nb-avatar-ai-operator">
+                        <i class="bi bi-gear"></i>
+                    </div>
+                    <div class="nb-bubble-ai">{{ msg.content | safe }}</div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Execute confirmation bar (hidden until action pending) -->
+        <div class="nb-execute-bar" id="executeBar" style="display:none;">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-exclamation-triangle text-warning fs-5"></i>
+                <div>
+                    <div class="fw-semibold small">Action Ready to Execute</div>
+                    <div class="text-muted" style="font-size:0.75rem;" id="executeDesc">
+                        Review the operation above before confirming.
+                    </div>
+                </div>
+                <div class="ms-auto d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="cancelAction()">
+                        <i class="bi bi-x me-1"></i>Cancel
+                    </button>
+                    <button class="btn btn-sm nb-btn-execute" id="executeBtn" onclick="executeAction()">
+                        <i class="bi bi-check2-circle me-1"></i>Execute
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div class="nb-input-area">
+            <div class="nb-input-wrapper">
+                <textarea id="msgInput" class="nb-textarea"
+                    placeholder="Describe the operation you want to perform…"
+                    rows="1" maxlength="1000"></textarea>
+                <button class="nb-send-btn nb-send-operator" id="sendBtn" onclick="sendMessage()">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
+            <div class="nb-input-meta d-flex justify-content-between mt-1">
+                <span class="text-muted" style="font-size:0.68rem;">
+                    <i class="bi bi-shield-exclamation me-1 text-warning"></i>
+                    All operations are audit-logged. Confirm before executing.
+                </span>
+                <span class="text-muted" style="font-size:0.68rem;" id="charCount">0 / 1000</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="nb-sidebar-overlay d-lg-none" id="sidebarOverlay" onclick="closeSidebar()"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let isStreaming    = false;
+let pendingAction  = null;
+const input        = document.getElementById('msgInput');
+const sendBtn      = document.getElementById('sendBtn');
+const container    = document.getElementById('messagesContainer');
+const welcome      = document.getElementById('welcomeBlock');
+const charCount    = document.getElementById('charCount');
+const executeBar   = document.getElementById('executeBar');
+const executeDesc  = document.getElementById('executeDesc');
+
+input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+    charCount.textContent = input.value.length + ' / 1000';
+});
+input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isStreaming) { e.preventDefault(); sendMessage(); }
+});
+
+function askAbout(q) {
+    input.value = q;
+    input.dispatchEvent(new Event('input'));
+    sendMessage();
+    closeSidebar();
+}
+
+function sendMessage() {
+    const text = input.value.trim();
+    if (!text || isStreaming) return;
+    if (welcome) welcome.style.display = 'none';
+    hideExecuteBar();
+    appendUserMsg(text);
+    input.value = '';
+    input.style.height = 'auto';
+    charCount.textContent = '0 / 1000';
+    const bubble = createAIBubble();
+    setStreaming(true);
+
+    fetch('/operator/chat/send', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: text}),
+    }).then(resp => {
+        if (!resp.ok) { bubble.textContent = 'Error.'; setStreaming(false); return; }
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '', fullText = '';
+        function read() {
+            reader.read().then(({done, value}) => {
+                if (done) {
+                    setStreaming(false);
+                    // Check for action block in completed response
+                    checkForAction(fullText, bubble);
+                    return;
+                }
+                buffer += decoder.decode(value, {stream: true});
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    try {
+                        const ev = JSON.parse(line.slice(6));
+                        if (ev.type === 'delta') {
+                            fullText += ev.text;
+                            bubble.innerHTML = formatMarkdown(fullText);
+                            scrollToBottom();
+                        }
+                        else if (ev.type === 'done') { setStreaming(false); checkForAction(fullText, bubble); }
+                        else if (ev.type === 'error') { bubble.textContent = ev.text; setStreaming(false); }
+                    } catch(e) {}
+                }
+                read();
+            });
+        }
+        read();
+    }).catch(() => { bubble.textContent = 'Connection error.'; setStreaming(false); });
+}
+
+function checkForAction(text, bubble) {
+    const match = text.match(/```action\s*(\{[\s\S]*?\})\s*```/);
+    if (match) {
+        try {
+            pendingAction = JSON.parse(match[1]);
+            showExecuteBar(pendingAction.op);
+            // Hide raw action block from bubble — show clean version
+            const clean = text.replace(/```action[\s\S]*?```/,
+                '<div class="nb-action-ready"><i class="bi bi-check2-circle me-2 text-warning"></i>' +
+                '<strong>Action ready:</strong> ' + describeAction(pendingAction) +
+                ' — confirm below.</div>');
+            bubble.innerHTML = formatMarkdown(clean);
+        } catch(e) { /* not valid JSON, leave as-is */ }
+    }
+}
+
+function describeAction(action) {
+    const map = {
+        'OPEN_ACCOUNT':           'Open new account',
+        'UPDATE_PROFILE':         'Update customer profile',
+        'POST_ALERT':             'Post customer alert',
+        'CHANGE_ACCOUNT_STATUS':  'Change account status',
+        'CREATE_LOAN_APPLICATION':'Create loan application',
+    };
+    return map[action.op] || action.op;
+}
+
+function showExecuteBar(op) {
+    executeDesc.textContent = describeAction({op}) + ' — review details above before confirming.';
+    executeBar.style.display = 'block';
+    scrollToBottom();
+}
+
+function hideExecuteBar() {
+    executeBar.style.display = 'none';
+    pendingAction = null;
+}
+
+function cancelAction() {
+    hideExecuteBar();
+    fetch('/operator/chat/clear').then(() => {});
+    appendSystemMsg('Operation cancelled.');
+}
+
+function executeAction() {
+    if (!pendingAction) return;
+    const btn = document.getElementById('executeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Executing…';
+
+    fetch('/operator/execute', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action: pendingAction}),
+    }).then(r => r.json()).then(result => {
+        hideExecuteBar();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Execute';
+        if (result.success) {
+            appendResultMsg(result);
+        } else {
+            appendErrorMsg(result.error || 'Operation failed.');
+        }
+    }).catch(() => {
+        hideExecuteBar();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Execute';
+        appendErrorMsg('Network error during execution.');
+    });
+}
+
+function appendUserMsg(text) {
+    const row = document.createElement('div');
+    row.className = 'nb-msg-row nb-msg-row-user';
+    row.innerHTML = `<div class="nb-bubble-user">${escapeHtml(text)}</div>
+                     <div class="nb-avatar-sm nb-avatar-sm-operator"><i class="bi bi-shield-lock"></i></div>`;
+    container.appendChild(row);
+    scrollToBottom();
+}
+
+function appendSystemMsg(text) {
+    const row = document.createElement('div');
+    row.className = 'nb-msg-row nb-msg-row-ai';
+    row.innerHTML = `<div class="nb-avatar-ai-sm nb-avatar-ai-operator"><i class="bi bi-gear"></i></div>
+                     <div class="nb-bubble-ai nb-bubble-system">${escapeHtml(text)}</div>`;
+    container.appendChild(row);
+    scrollToBottom();
+}
+
+function appendResultMsg(result) {
+    const row = document.createElement('div');
+    row.className = 'nb-msg-row nb-msg-row-ai';
+    let content = '<div class="nb-result-block">';
+    content += '<div class="nb-result-title"><i class="bi bi-check-circle-fill text-success me-2"></i>Operation completed successfully</div>';
+    for (const [k, v] of Object.entries(result)) {
+        if (k === 'success') continue;
+        content += `<div class="nb-result-row"><span class="nb-result-key">${k.replace(/_/g,' ')}</span><span class="nb-result-val">${v}</span></div>`;
+    }
+    content += '</div>';
+    row.innerHTML = `<div class="nb-avatar-ai-sm nb-avatar-ai-operator"><i class="bi bi-gear"></i></div>
+                     <div class="nb-bubble-ai">${content}</div>`;
+    container.appendChild(row);
+    scrollToBottom();
+}
+
+function appendErrorMsg(msg) {
+    const row = document.createElement('div');
+    row.className = 'nb-msg-row nb-msg-row-ai';
+    row.innerHTML = `<div class="nb-avatar-ai-sm nb-avatar-ai-operator"><i class="bi bi-gear"></i></div>
+                     <div class="nb-bubble-ai nb-bubble-error">
+                       <i class="bi bi-x-circle-fill text-danger me-2"></i>${escapeHtml(msg)}
+                     </div>`;
+    container.appendChild(row);
+    scrollToBottom();
+}
+
+function createAIBubble() {
+    const row    = document.createElement('div');
+    row.className = 'nb-msg-row nb-msg-row-ai';
+    const avatar = document.createElement('div');
+    avatar.className = 'nb-avatar-ai-sm nb-avatar-ai-operator';
+    avatar.innerHTML = '<i class="bi bi-gear"></i>';
+    const bubble = document.createElement('div');
+    bubble.className = 'nb-bubble-ai';
+    bubble.innerHTML = '<span class="nb-typing-dots"><span></span><span></span><span></span></span>';
+    row.appendChild(avatar); row.appendChild(bubble);
+    container.appendChild(row);
+    scrollToBottom();
+    return bubble;
+}
+
+function setStreaming(s) {
+    isStreaming = s;
+    sendBtn.disabled = s;
+    input.disabled   = s;
+    sendBtn.innerHTML = s ? '<i class="bi bi-hourglass-split"></i>' : '<i class="bi bi-send-fill"></i>';
+    if (!s) input.focus();
+}
+
+function clearChat() {
+    if (isStreaming) return;
+    if (!confirm('Clear conversation?')) return;
+    fetch('/operator/chat/clear').then(() => location.reload());
+}
+
+function scrollToBottom() { container.scrollTop = container.scrollHeight; }
+function escapeHtml(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+function formatMarkdown(text) {
+    let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    html = html.replace(/^(\|.+\|\n)((?:\|[-:| ]+\|\n))((?:\|.+\|\n?)+)/gm, (match) => {
+        const rows = match.trim().split('\n').filter(r => r.trim());
+        const headers = rows[0].split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('');
+        const body = rows.slice(2).map(row => {
+            const cells = row.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+        return `<div class="nb-table-wrap"><table class="nb-table"><thead><tr>${headers}</tr></thead><tbody>${body}</tbody></table></div>`;
+    });
+    html = html.replace(/^### (.+)$/gm,'<h6 class="nb-md-h">$1</h6>');
+    html = html.replace(/^## (.+)$/gm, '<h5 class="nb-md-h">$1</h5>');
+    html = html.replace(/^# (.+)$/gm,  '<h5 class="nb-md-h">$1</h5>');
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g,'<em>$1</em>');
+    html = html.replace(/`([^`]+)`/g,'<code class="nb-inline-code">$1</code>');
+    html = html.replace(/((?:^[\-\*] .+\n?)+)/gm, (b) => {
+        const items = b.trim().split('\n').map(l=>`<li>${l.replace(/^[\-\*] /,'').trim()}</li>`).join('');
+        return `<ul class="nb-md-ul">${items}</ul>`;
+    });
+    html = html.replace(/((?:^\d+\. .+\n?)+)/gm, (b) => {
+        const items = b.trim().split('\n').map(l=>`<li>${l.replace(/^\d+\. /,'').trim()}</li>`).join('');
+        return `<ol class="nb-md-ol">${items}</ol>`;
+    });
+    html = html.replace(/\n{2,}/g,'</p><p class="nb-md-p">');
+    html = html.replace(/\n/g,'<br/>');
+    return `<p class="nb-md-p">${html}</p>`;
+}
+
+document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+    document.getElementById('nbSidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('show');
+});
+document.getElementById('sidebarClose')?.addEventListener('click', closeSidebar);
+function closeSidebar() {
+    document.getElementById('nbSidebar')?.classList.remove('open');
+    document.getElementById('sidebarOverlay')?.classList.remove('show');
+}
+window.addEventListener('load', () => { scrollToBottom(); input.focus(); });
+</script>
+{% endblock %}

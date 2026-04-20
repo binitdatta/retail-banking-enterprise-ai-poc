@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+{% block title %}Manager Dashboard — NexusBank{% endblock %}
+
+{% block content %}
+<div class="nb-chat-layout">
+
+    <!-- ── SIDEBAR ──────────────────────────────────────────────────────── -->
+    <aside class="nb-sidebar" id="nbSidebar">
+        <div class="nb-sidebar-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="nb-avatar-lg nb-avatar-banker">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+                <div>
+                    <div class="fw-semibold">{{ banker_username }}</div>
+                    <div class="small text-muted">Branch Manager</div>
+                    <span class="nb-badge-type nb-type-banker">BANKER</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Portfolio snapshot -->
+        {% set totals = portfolio.totals %}
+        {% if totals %}
+        <div class="nb-sidebar-section">
+            <div class="nb-sidebar-section-title">
+                <i class="bi bi-graph-up me-2"></i>Portfolio Snapshot
+            </div>
+            <div class="nb-stat-row">
+                <span class="text-muted small">Total Customers</span>
+                <span class="fw-bold">{{ totals.total_customers or 0 }}</span>
+            </div>
+            <div class="nb-stat-row">
+                <span class="text-muted small">Total Deposits</span>
+                <span class="fw-bold nb-balance-text">
+                    ${{ "{:,.0f}".format((totals.total_deposits or 0) | float) }}
+                </span>
+            </div>
+            <div class="nb-stat-row">
+                <span class="text-muted small">Loan Book</span>
+                <span class="fw-bold nb-balance-text">
+                    ${{ "{:,.0f}".format((totals.total_loan_book or 0) | float) }}
+                </span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Report quick launch -->
+        <div class="nb-sidebar-section">
+            <div class="nb-sidebar-section-title">
+                <i class="bi bi-file-earmark-bar-graph me-2"></i>Reports
+            </div>
+            <div class="d-flex flex-column gap-2">
+                {% set reports = [
+                    ("bi-people",              "Give me a full portfolio summary across all customers"),
+                    ("bi-exclamation-triangle", "Show me the delinquency and at-risk accounts report"),
+                    ("bi-funnel",              "What is the current loan application pipeline by status?"),
+                    ("bi-building",            "Show me branch performance — deposits and loan book per branch"),
+                    ("bi-graph-up",            "Give me spending analytics across all customers for the last 30 days"),
+                ] %}
+                {% for icon, prompt in reports %}
+                <button class="nb-quick-btn" onclick="askAbout('{{ prompt }}')">
+                    <i class="bi {{ icon }} me-2"></i>
+                    {{ prompt[:48] }}{% if prompt|length > 48 %}…{% endif %}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Additional queries -->
+        <div class="nb-sidebar-section">
+            <div class="nb-sidebar-section-title">
+                <i class="bi bi-lightning-charge me-2"></i>Quick Queries
+            </div>
+            <div class="d-flex flex-column gap-2">
+                {% set quick = [
+                    ("bi-award",              "Which customers have the highest deposits?"),
+                    ("bi-calendar-x",         "Which loans are past due this month?"),
+                    ("bi-clock-history",      "Show me all PENDING loan applications"),
+                    ("bi-bar-chart",          "What is the top spending category across all customers?"),
+                    ("bi-geo-alt",            "Which branch has the highest loan book?"),
+                ] %}
+                {% for icon, q in quick %}
+                <button class="nb-quick-btn" onclick="askAbout('{{ q }}')">
+                    <i class="bi {{ icon }} me-2"></i>{{ q }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <button class="nb-sidebar-close d-lg-none" id="sidebarClose">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </aside>
+
+    <!-- ── CHAT PANEL ────────────────────────────────────────────────────── -->
+    <div class="nb-chat-panel d-flex flex-column">
+
+        <div class="nb-chat-toolbar">
+            <button class="btn btn-sm nb-icon-btn d-lg-none me-2" id="sidebarToggle">
+                <i class="bi bi-layout-sidebar"></i>
+            </button>
+            <div class="d-flex align-items-center gap-2">
+                <div class="nb-ai-status-dot"></div>
+                <div>
+                    <div class="fw-semibold small">NexusBank Manager Intelligence</div>
+                    <div class="text-muted" style="font-size:0.7rem;">
+                        Cross-customer analytics · Powered by Claude
+                    </div>
+                </div>
+            </div>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <span class="nb-banker-badge">
+                    <i class="bi bi-person-badge me-1"></i>Manager View
+                </span>
+                <a href="{{ url_for('main.index') }}" class="btn btn-sm nb-icon-btn" title="Home">
+                    <i class="bi bi-house"></i>
+                </a>
+                <button class="btn btn-sm nb-icon-btn" onclick="clearChat()" title="Clear">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="nb-messages flex-grow-1" id="messagesContainer">
+            {% if not history %}
+            <div class="nb-welcome" id="welcomeBlock">
+                <div class="nb-welcome-icon nb-welcome-icon-banker">
+                    <i class="bi bi-bar-chart-line"></i>
+                </div>
+                <h4 class="fw-bold mb-2">Manager Dashboard</h4>
+                <p class="text-muted mb-4">
+                    Access cross-customer analytics, portfolio reports,
+                    delinquency analysis, and branch performance data.
+                </p>
+                <div class="nb-welcome-chips d-flex flex-wrap gap-2 justify-content-center">
+                    {% for q in [
+                        "Portfolio summary",
+                        "Delinquency report",
+                        "Loan pipeline",
+                        "Branch performance",
+                    ] %}
+                    <button class="nb-chip-btn" onclick="askAbout('Give me the {{ q | lower }}')">
+                        {{ q }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% for msg in history %}
+                {% if msg.role == 'user' %}
+                <div class="nb-msg-row nb-msg-row-user">
+                    <div class="nb-bubble-user">{{ msg.content }}</div>
+                    <div class="nb-avatar-sm nb-avatar-sm-banker">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                </div>
+                {% else %}
+                <div class="nb-msg-row nb-msg-row-ai">
+                    <div class="nb-avatar-ai-sm"><i class="bi bi-bar-chart-line"></i></div>
+                    <div class="nb-bubble-ai" id="msg-{{ loop.index }}">{{ msg.content | safe }}</div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Input -->
+        <div class="nb-input-area">
+            <div class="nb-input-wrapper">
+                <textarea id="msgInput" class="nb-textarea"
+                    placeholder="Ask for a report, query the portfolio, analyse trends…"
+                    rows="1" maxlength="1000"></textarea>
+                <button class="nb-send-btn" id="sendBtn" onclick="sendMessage()">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
+            <div class="nb-input-meta d-flex justify-content-between mt-1">
+                <span class="text-muted" style="font-size:0.68rem;">
+                    <i class="bi bi-shield-lock-fill me-1 text-warning"></i>
+                    Banker access — cross-customer data visible
+                </span>
+                <span class="text-muted" style="font-size:0.68rem;" id="charCount">0 / 1000</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="nb-sidebar-overlay d-lg-none" id="sidebarOverlay" onclick="closeSidebar()"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let isStreaming = false;
+const input     = document.getElementById('msgInput');
+const sendBtn   = document.getElementById('sendBtn');
+const container = document.getElementById('messagesContainer');
+const welcome   = document.getElementById('welcomeBlock');
+const charCount = document.getElementById('charCount');
+
+input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+    charCount.textContent = input.value.length + ' / 1000';
+});
+input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isStreaming) { e.preventDefault(); sendMessage(); }
+});
+
+function askAbout(q) {
+    input.value = q;
+    input.dispatchEvent(new Event('input'));
+    sendMessage();
+    closeSidebar();
+}
+
+function sendMessage() {
+    const text = input.value.trim();
+    if (!text || isStreaming) return;
+    if (welcome) welcome.style.display = 'none';
+    appendUserMsg(text);
+    input.value = '';
+    input.style.height = 'auto';
+    charCount.textContent = '0 / 1000';
+    const bubble = createAIBubble();
+    setStreaming(true);
+
+    fetch('/manager/chat/send', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: text}),
+    }).then(resp => {
+        if (!resp.ok) { bubble.textContent = 'Error sending message.'; setStreaming(false); return; }
+        const reader  = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '', fullText = '';
+        function read() {
+            reader.read().then(({done, value}) => {
+                if (done) { setStreaming(false); return; }
+                buffer += decoder.decode(value, {stream: true});
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    try {
+                        const ev = JSON.parse(line.slice(6));
+                        if (ev.type === 'delta') { fullText += ev.text; bubble.innerHTML = formatMarkdown(fullText); scrollToBottom(); }
+                        else if (ev.type === 'done') { setStreaming(false); }
+                        else if (ev.type === 'error') { bubble.textContent = ev.text; setStreaming(false); }
+                    } catch(e) {}
+                }
+                read();
+            });
+        }
+        read();
+    }).catch(() => { bubble.textContent = 'Connection error.'; setStreaming(false); });
+}
+
+function appendUserMsg(text) {
+    const row = document.createElement('div');
+    row.className = 'nb-msg-row nb-msg-row-user';
+    row.innerHTML = `<div class="nb-bubble-user">${escapeHtml(text)}</div>
+                     <div class="nb-avatar-sm nb-avatar-sm-banker"><i class="bi bi-person-badge"></i></div>`;
+    container.appendChild(row);
+    scrollToBottom();
+}
+
+function createAIBubble() {
+    const row    = document.createElement('div');
+    row.className = 'nb-msg-row nb-msg-row-ai';
+    const avatar = document.createElement('div');
+    avatar.className = 'nb-avatar-ai-sm';
+    avatar.innerHTML = '<i class="bi bi-bar-chart-line"></i>';
+    const bubble = document.createElement('div');
+    bubble.className = 'nb-bubble-ai';
+    bubble.innerHTML = '<span class="nb-typing-dots"><span></span><span></span><span></span></span>';
+    row.appendChild(avatar); row.appendChild(bubble);
+    container.appendChild(row);
+    scrollToBottom();
+    return bubble;
+}
+
+function setStreaming(s) {
+    isStreaming = s;
+    sendBtn.disabled = s;
+    input.disabled   = s;
+    sendBtn.innerHTML = s ? '<i class="bi bi-hourglass-split"></i>' : '<i class="bi bi-send-fill"></i>';
+    if (!s) input.focus();
+}
+
+function clearChat() {
+    if (isStreaming) return;
+    if (!confirm('Clear conversation?')) return;
+    fetch('/manager/chat/clear').then(() => location.reload());
+}
+
+function scrollToBottom() { container.scrollTop = container.scrollHeight; }
+
+function formatMarkdown(text) {
+    let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    html = html.replace(/^(\|.+\|\n)((?:\|[-:| ]+\|\n))((?:\|.+\|\n?)+)/gm, (match) => {
+        const rows = match.trim().split('\n').filter(r => r.trim());
+        const headers = rows[0].split('|').filter(c=>c.trim()).map(c=>`<th>${c.trim()}</th>`).join('');
+        const body = rows.slice(2).map(row => {
+            const cells = row.split('|').filter(c=>c.trim()).map(c=>`<td>${c.trim()}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+        return `<div class="nb-table-wrap"><table class="nb-table"><thead><tr>${headers}</tr></thead><tbody>${body}</tbody></table></div>`;
+    });
+    html = html.replace(/^### (.+)$/gm,'<h6 class="nb-md-h">$1</h6>');
+    html = html.replace(/^## (.+)$/gm, '<h5 class="nb-md-h">$1</h5>');
+    html = html.replace(/^# (.+)$/gm,  '<h5 class="nb-md-h">$1</h5>');
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g,'<em>$1</em>');
+    html = html.replace(/`([^`]+)`/g,'<code class="nb-inline-code">$1</code>');
+    html = html.replace(/((?:^[\-\*] .+\n?)+)/gm, (b) => {
+        const items = b.trim().split('\n').map(l=>`<li>${l.replace(/^[\-\*] /,'').trim()}</li>`).join('');
+        return `<ul class="nb-md-ul">${items}</ul>`;
+    });
+    html = html.replace(/((?:^\d+\. .+\n?)+)/gm, (b) => {
+        const items = b.trim().split('\n').map(l=>`<li>${l.replace(/^\d+\. /,'').trim()}</li>`).join('');
+        return `<ol class="nb-md-ol">${items}</ol>`;
+    });
+    html = html.replace(/\n{2,}/g,'</p><p class="nb-md-p">');
+    html = html.replace(/\n/g,'<br/>');
+    return `<p class="nb-md-p">${html}</p>`;
+}
+
+function escapeHtml(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+    document.getElementById('nbSidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('show');
+});
+document.getElementById('sidebarClose')?.addEventListener('click', closeSidebar);
+function closeSidebar() {
+    document.getElementById('nbSidebar')?.classList.remove('open');
+    document.getElementById('sidebarOverlay')?.classList.remove('show');
+}
+window.addEventListener('load', () => { scrollToBottom(); input.focus(); });
+</script>
+{% endblock %}

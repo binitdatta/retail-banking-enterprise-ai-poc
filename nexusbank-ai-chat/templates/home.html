@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}NexusBank — Your AI-Powered Digital Bank{% endblock %}
+
+{% block content %}
+<!-- ══════════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════════════ -->
+<section class="nb-hero">
+    <div class="container">
+        <div class="row align-items-center min-vh-80 py-5">
+            <div class="col-lg-6 pe-lg-5">
+                <div class="nb-hero-badge mb-4">
+                    <i class="bi bi-stars me-2 text-warning"></i>
+                    AI-Powered Banking — Now Available
+                </div>
+                <h1 class="nb-hero-title mb-4">
+                    Banking with an AI<br/>
+                    <span class="nb-gradient-text">Personal Banker</span><br/>
+                    Available 24/7
+                </h1>
+                <p class="nb-hero-subtitle mb-5">
+                    Ask NexusBank AI anything about your accounts, loans,
+                    transactions, and more. Instant answers. Real-time data.
+                    Secured by enterprise-grade Keycloak authentication.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{{ url_for('auth.login') }}"
+                       class="btn nb-btn-primary-lg">
+                        <i class="bi bi-shield-lock me-2"></i>
+                        Sign In Securely
+                    </a>
+                    <a href="#features" class="btn nb-btn-outline-lg">
+                        <i class="bi bi-play-circle me-2"></i>
+                        Learn More
+                    </a>
+                </div>
+                <div class="nb-trust-badges mt-5 d-flex flex-wrap gap-4">
+                    <div class="nb-trust-item">
+                        <i class="bi bi-bank text-primary me-2"></i>
+                        <span class="small text-muted">FDIC Insured</span>
+                    </div>
+                    <div class="nb-trust-item">
+                        <i class="bi bi-lock text-success me-2"></i>
+                        <span class="small text-muted">256-bit Encryption</span>
+                    </div>
+                    <div class="nb-trust-item">
+                        <i class="bi bi-shield-check text-info me-2"></i>
+                        <span class="small text-muted">Keycloak PKCE Auth</span>
+                    </div>
+                    <div class="nb-trust-item">
+                        <i class="bi bi-award text-warning me-2"></i>
+                        <span class="small text-muted">PCI DSS Compliant</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mt-5 mt-lg-0">
+                <div class="nb-chat-preview">
+                    <div class="nb-chat-preview-header">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="nb-ai-dot"></div>
+                            <span class="small fw-semibold">NexusBank AI Assistant</span>
+                            <span class="nb-online-badge ms-auto">● Live</span>
+                        </div>
+                    </div>
+                    <div class="nb-chat-preview-body">
+                        <div class="nb-preview-msg nb-msg-ai">
+                            <div class="nb-msg-avatar-ai">
+                                <i class="bi bi-stars"></i>
+                            </div>
+                            <div class="nb-msg-bubble-ai">
+                                Good morning! I'm your NexusBank AI assistant.
+                                How can I help you today?
+                            </div>
+                        </div>
+                        <div class="nb-preview-msg nb-msg-user">
+                            <div class="nb-msg-bubble-user">
+                                What's my checking account balance?
+                            </div>
+                        </div>
+                        <div class="nb-preview-msg nb-msg-ai">
+                            <div class="nb-msg-avatar-ai">
+                                <i class="bi bi-stars"></i>
+                            </div>
+                            <div class="nb-msg-bubble-ai">
+                                Your Nexus 360 Checking (ending <strong>0011</strong>)
+                                has a current balance of <strong>$28,450.00</strong>
+                                with <strong>$28,450.00</strong> available.
+                                <br/><br/>
+                                Your most recent transaction was a $5,000 IRS
+                                estimated tax payment posted Apr 14.
+                                <br/><br/>
+                                Is there anything else I can help you with today?
+                            </div>
+                        </div>
+                        <div class="nb-preview-msg nb-msg-user">
+                            <div class="nb-msg-bubble-user">
+                                When is my mortgage payment due?
+                            </div>
+                        </div>
+                        <div class="nb-preview-msg nb-msg-ai">
+                            <div class="nb-msg-avatar-ai">
+                                <i class="bi bi-stars"></i>
+                            </div>
+                            <div class="nb-msg-bubble-ai nb-typing">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     FEATURES
+══════════════════════════════════════════════════════════════ -->
+<section id="features" class="nb-section py-6">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="nb-section-title">Everything You Need,<br/>
+                <span class="nb-gradient-text">Answered Instantly</span>
+            </h2>
+            <p class="text-muted mt-3 mx-auto" style="max-width:560px;">
+                Ask in plain English. Get real answers from your live account data —
+                no hold times, no menus, no waiting.
+            </p>
+        </div>
+        <div class="row g-4">
+            {% set features = [
+                ("bi-wallet2",        "text-primary",   "Account Balances",
+                 "Current and available balances across all checking, savings, CDs, and money market accounts in real time."),
+                ("bi-clock-history",  "text-info",      "Transaction History",
+                 "Recent transactions with merchant names, categories, and running balance. Spot unusual charges instantly."),
+                ("bi-house",          "text-success",   "Mortgage Details",
+                 "Principal balance, interest rate, escrow, PMI, property details, and your next payment amount."),
+                ("bi-car-front",      "text-warning",   "Auto Loans",
+                 "Payoff balance, rate, remaining term, vehicle details, and next payment date for your auto financing."),
+                ("bi-mortarboard",    "text-danger",    "Student Loans",
+                 "Outstanding balance, repayment plan, servicer info, and progress toward payoff on your student loans."),
+                ("bi-graph-up",       "text-primary",   "Spending Analysis",
+                 "Category-by-category breakdown of your spending across any time period. Groceries, dining, utilities and more."),
+                ("bi-credit-card",    "text-info",      "Card Management",
+                 "Debit card status, spending limits, contactless settings, and recent card transactions at a glance."),
+                ("bi-send",           "text-success",   "Wire Transfers",
+                 "History and status of domestic and international wire transfers with beneficiary and routing details."),
+                ("bi-file-earmark-text","text-warning", "Loan Applications",
+                 "Track your mortgage, auto, and personal loan applications — status, reviewer notes, and next steps."),
+            ] %}
+            {% for icon, color, title, desc in features %}
+            <div class="col-md-6 col-lg-4">
+                <div class="nb-feature-card h-100">
+                    <div class="nb-feature-icon {{ color }} mb-3">
+                        <i class="bi {{ icon }}"></i>
+                    </div>
+                    <h5 class="nb-feature-title">{{ title }}</h5>
+                    <p class="text-muted small mb-0">{{ desc }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SECURITY BANNER
+══════════════════════════════════════════════════════════════ -->
+<section class="nb-security-banner py-5">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-md-2 text-center">
+                <i class="bi bi-shield-lock-fill nb-security-icon text-success"></i>
+            </div>
+            <div class="col-md-7">
+                <h3 class="fw-bold mb-2">Enterprise-Grade Security</h3>
+                <p class="text-muted mb-0">
+                    Authentication is powered by <strong>Keycloak 26</strong> with
+                    <strong>PKCE (Proof Key for Code Exchange)</strong> — the same standard
+                    used by major financial institutions. No client secrets in the browser.
+                    Your session is protected with server-side state validation and
+                    cryptographic code challenges on every login.
+                </p>
+            </div>
+            <div class="col-md-3 text-center text-md-end">
+                <a href="{{ url_for('auth.login') }}"
+                   class="btn nb-btn-primary-lg w-100">
+                    <i class="bi bi-shield-lock me-2"></i>
+                    Sign In Now
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     STATS
+══════════════════════════════════════════════════════════════ -->
+<section class="nb-section py-5">
+    <div class="container">
+        <div class="row g-4 text-center">
+            {% set stats = [
+                ("$2.3B+", "Assets Under Management"),
+                ("10,000+","Customers Nationwide"),
+                ("6",      "Branch Locations"),
+                ("24/7",   "AI Assistant Availability"),
+            ] %}
+            {% for value, label in stats %}
+            <div class="col-6 col-md-3">
+                <div class="nb-stat-card">
+                    <div class="nb-stat-value">{{ value }}</div>
+                    <div class="nb-stat-label text-muted small">{{ label }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     CTA
+══════════════════════════════════════════════════════════════ -->
+<section class="nb-cta py-6">
+    <div class="container text-center">
+        <h2 class="nb-section-title mb-3">
+            Ready to Talk to Your<br/>
+            <span class="nb-gradient-text">AI Banker?</span>
+        </h2>
+        <p class="text-muted mb-5 mx-auto" style="max-width:480px;">
+            Sign in securely with your NexusBank credentials and start
+            getting instant answers about all of your accounts.
+        </p>
+        <a href="{{ url_for('auth.login') }}"
+           class="btn nb-btn-primary-lg px-5">
+            <i class="bi bi-chat-dots me-2"></i>
+            Launch AI Assistant
+        </a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='My Profile',activeNav='profile'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+  <div class="nb-page-header nb-fade-in">
+    <div>
+      <h1 class="nb-page-title"><i class="bi bi-person-circle me-2"></i>My Profile</h1>
+      <p class="nb-page-subtitle">Personal information, KYC status, and account preferences</p>
+    </div>
+    <div class="nb-page-actions">
+        <span class="nb-badge"
+              th:classappend="${customer.kycStatus.name() == 'VERIFIED'} ? 'nb-badge-green' :
+                              (${customer.kycStatus.name() == 'PENDING'} ? 'nb-badge-warning' : 'nb-badge-secondary')"
+              th:text="'KYC: ' + ${customer.kycStatus.displayName}">KYC Status</span>
+      <span class="nb-badge nb-badge-gold" th:text="${customer.customerType.displayName}">Type</span>
+    </div>
+  </div>
+
+  <div class="nb-grid-2 mt-2">
+
+    <!-- Left Column: Identity -->
+    <div>
+
+      <!-- Avatar + Name Card -->
+      <div class="nb-profile-hero nb-fade-in nb-delay-1">
+        <div class="nb-profile-avatar">
+          <span th:text="${#strings.substring(customer.firstName,0,1) + #strings.substring(customer.lastName,0,1)}">JH</span>
+        </div>
+        <div class="nb-profile-id">
+          <h2 class="nb-profile-name" th:text="${customer.fullName}">James Harrington</h2>
+          <div class="nb-mono nb-text-muted" th:text="${customer.customerNumber}">CUS-001</div>
+          <div class="mt-1">
+            <span class="nb-badge nb-badge-gold" th:text="${customer.customerType.displayName}">Premium</span>
+            <span class="nb-badge ms-1"
+                  th:classappend="${customer.kycStatus.name() == 'VERIFIED'} ? 'nb-badge-green' : 'nb-badge-warning'"
+                  th:text="${customer.kycStatus.displayName}">Verified</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personal Info -->
+      <div class="nb-card nb-fade-in nb-delay-2 mt-4">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-person me-2"></i>Personal Information</h2>
+        </div>
+        <div class="nb-detail-grid">
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Full Name</span>
+            <span class="nb-detail-value" th:text="${customer.fullName}">Name</span>
+          </div>
+          <div class="nb-detail-row" th:if="${customer.middleName != null}">
+            <span class="nb-detail-label">Middle Name</span>
+            <span class="nb-detail-value" th:text="${customer.middleName}">Middle</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Date of Birth</span>
+            <span class="nb-detail-value nb-mono" th:text="${#temporals.format(customer.dateOfBirth, 'MMMM d, yyyy')}">DOB</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Gender</span>
+            <span class="nb-detail-value" th:text="${customer.gender != null ? customer.gender.displayName : 'Not specified'}">Gender</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">SSN (masked)</span>
+            <span class="nb-detail-value nb-mono">•••–••–<span th:text="${customer.ssnLast4}">0000</span></span>
+          </div>
+          <div class="nb-detail-row" th:if="${customer.nationality != null}">
+            <span class="nb-detail-label">Nationality</span>
+            <span class="nb-detail-value" th:text="${customer.nationality}">US</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Member Since</span>
+            <span class="nb-detail-value nb-mono" th:text="${#temporals.format(customer.createdAt, 'MMMM d, yyyy')}">Date</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="nb-card nb-fade-in nb-delay-3 mt-4">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-envelope me-2"></i>Contact Information</h2>
+        </div>
+        <div class="nb-detail-grid">
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Email</span>
+            <span class="nb-detail-value">
+                <a th:href="'mailto:' + ${customer.email}" class="nb-link-gold" th:text="${customer.email}">email</a>
+                <i class="bi bi-check-circle-fill nb-text-green ms-1" th:if="${customer.emailVerified}"></i>
+              </span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Primary Phone</span>
+            <span class="nb-detail-value nb-mono" th:text="${customer.phone}">Phone</span>
+          </div>
+          <div class="nb-detail-row" th:if="${customer.mobilePhone != null}">
+            <span class="nb-detail-label">Mobile</span>
+            <span class="nb-detail-value nb-mono" th:text="${customer.mobilePhone}">Mobile</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Two-Factor Auth</span>
+            <span class="nb-detail-value">
+                <span class="nb-badge" th:classappend="${customer.twoFactorEnabled} ? 'nb-badge-green' : 'nb-badge-secondary'"
+                      th:text="${customer.twoFactorEnabled ? 'Enabled' : 'Disabled'}">Status</span>
+              </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column -->
+    <div>
+
+      <!-- Employment & Financial -->
+      <div class="nb-card nb-fade-in nb-delay-2">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-briefcase me-2"></i>Employment &amp; Financial</h2>
+        </div>
+        <div class="nb-detail-grid">
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Employment Status</span>
+            <span class="nb-detail-value">
+                <span class="nb-badge"
+                      th:classappend="${customer.employmentStatus.name() == 'EMPLOYED'} ? 'nb-badge-green' : 'nb-badge-secondary'"
+                      th:text="${customer.employmentStatus.displayName}">Employed</span>
+              </span>
+          </div>
+          <div class="nb-detail-row" th:if="${customer.employer != null}">
+            <span class="nb-detail-label">Employer</span>
+            <span class="nb-detail-value" th:text="${customer.employer}">Employer</span>
+          </div>
+          <div class="nb-detail-row" th:if="${customer.occupation != null}">
+            <span class="nb-detail-label">Occupation</span>
+            <span class="nb-detail-value" th:text="${customer.occupation}">Occupation</span>
+          </div>
+          <div class="nb-detail-row" th:if="${customer.annualIncome != null}">
+            <span class="nb-detail-label">Annual Income</span>
+            <span class="nb-detail-value nb-mono" th:text="'$' + ${#numbers.formatDecimal(customer.annualIncome, 1, 'COMMA', 0, 'POINT')}">$0</span>
+          </div>
+          <div class="nb-detail-row" th:if="${customer.creditScore != null}">
+            <span class="nb-detail-label">Credit Score</span>
+            <span class="nb-detail-value">
+                <span class="nb-mono fw-bold"
+                      th:classappend="${customer.creditScore >= 750} ? 'nb-text-green' : (${customer.creditScore >= 700} ? '' : 'nb-text-warning')"
+                      th:text="${customer.creditScore}">750</span>
+                <span class="nb-text-muted ms-2"
+                      th:text="${customer.creditScore >= 800} ? '(Exceptional)' : (${customer.creditScore >= 750} ? '(Very Good)' : (${customer.creditScore >= 700} ? '(Good)' : (${customer.creditScore >= 670} ? '(Fair)' : '(Building)')))">Rating</span>
+              </span>
+          </div>
+          <div class="nb-detail-row" th:if="${customer.creditScoreDate != null}">
+            <span class="nb-detail-label">Score Date</span>
+            <span class="nb-detail-value nb-mono nb-text-muted" th:text="${#temporals.format(customer.creditScoreDate, 'MMM d, yyyy')}">Date</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Addresses -->
+      <div class="nb-card nb-fade-in nb-delay-3 mt-4" th:if="${addresses != null and !addresses.isEmpty()}">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-geo-alt me-2"></i>Addresses</h2>
+        </div>
+        <div th:each="addr : ${addresses}" class="nb-address-block">
+          <div class="d-flex justify-content-between align-items-start">
+            <span class="nb-badge nb-badge-secondary" th:text="${addr.addressType.displayName}">Home</span>
+            <span class="nb-badge nb-badge-gold" th:if="${addr.isPrimary}">Primary</span>
+          </div>
+          <div class="nb-address-text mt-1">
+            <div th:text="${addr.addressLine1}">Street</div>
+            <div th:if="${addr.addressLine2 != null}" th:text="${addr.addressLine2}"></div>
+            <div th:text="${addr.city + ', ' + addr.stateCode + ' ' + addr.postalCode}">City, ST ZIP</div>
+            <div th:text="${addr.countryCode}">US</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KYC Documents -->
+      <div class="nb-card nb-fade-in nb-delay-4 mt-4" th:if="${documents != null and !documents.isEmpty()}">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-file-earmark-check me-2"></i>Identity Documents</h2>
+        </div>
+        <div class="nb-table-wrapper">
+          <table class="nb-table">
+            <thead>
+            <tr><th>Type</th><th>Number</th><th>Issued</th><th>Expires</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="doc : ${documents}">
+              <td th:text="${doc.documentType.displayName}">Type</td>
+              <td class="nb-mono" th:text="${doc.documentNumber}">Number</td>
+              <td class="nb-mono nb-text-muted" th:text="${doc.issueDate != null ? #temporals.format(doc.issueDate, 'MMM yyyy') : 'N/A'}">Date</td>
+              <td class="nb-mono" th:classappend="${doc.expirationDate != null and doc.expirationDate.isBefore(#temporals.createNow())} ? 'nb-amount-negative' : ''"
+                  th:text="${doc.expirationDate != null ? #temporals.format(doc.expirationDate, 'MMM yyyy') : 'N/A'}">Date</td>
+              <td><span class="nb-badge"
+                        th:classappend="${doc.verificationStatus.name() == 'VERIFIED'} ? 'nb-badge-green' :
+                                            (${doc.verificationStatus.name() == 'PENDING'} ? 'nb-badge-warning' : 'nb-badge-danger')"
+                        th:text="${doc.verificationStatus.displayName}">Verified</span></td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Assigned Branch / Banker -->
+      <div class="nb-card nb-fade-in nb-delay-4 mt-4" th:if="${customer.assignedBranch != null or customer.assignedBankerId != null}">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-building me-2"></i>Your NexusBank Team</h2>
+        </div>
+        <div class="nb-detail-grid">
+          <div class="nb-detail-row" th:if="${customer.assignedBranch != null}">
+            <span class="nb-detail-label">Home Branch</span>
+            <span class="nb-detail-value" th:text="${customer.assignedBranch.branchName}">Branch</span>
+          </div>
+          <div class="nb-detail-row" th:if="${customer.preferredContactMethod != null}">
+            <span class="nb-detail-label">Contact Preference</span>
+            <span class="nb-detail-value" th:text="${customer.preferredContactMethod.displayName}">Email</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</th:block>
+</html>

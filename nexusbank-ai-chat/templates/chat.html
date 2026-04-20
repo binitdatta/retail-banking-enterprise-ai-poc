@@ -1,0 +1,480 @@
+{% extends "base.html" %}
+{% block title %}AI Assistant — NexusBank{% endblock %}
+
+{% block content %}
+<div class="nb-chat-layout">
+
+    <!-- ══════════════════════════════════════════════════════
+         LEFT SIDEBAR — Customer snapshot
+    ══════════════════════════════════════════════════════════ -->
+    <aside class="nb-sidebar" id="nbSidebar">
+
+        <!-- Customer header -->
+        <div class="nb-sidebar-header">
+            <div class="d-flex align-items-center gap-3">
+                <div class="nb-avatar-lg">
+                    {{ customer.first_name[0] }}{{ customer.last_name[0] }}
+                </div>
+                <div>
+                    <div class="fw-semibold">
+                        {{ customer.first_name }} {{ customer.last_name }}
+                    </div>
+                    <div class="small text-muted">{{ customer.customer_number }}</div>
+                    <span class="nb-badge-type nb-type-{{ customer.customer_type | lower }}">
+                        {{ customer.customer_type | replace('_', ' ') }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts banner -->
+        {% if alerts %}
+        <div class="nb-sidebar-alerts">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-bell-fill text-warning"></i>
+                <span class="small fw-semibold">{{ alerts|length }} Unread Alert{{ 's' if alerts|length != 1 }}</span>
+            </div>
+            {% for alert in alerts[:3] %}
+            <div class="nb-alert-item">
+                <div class="nb-alert-type {{ alert.alert_type | lower }}">
+                    {% if alert.alert_type == 'PAYMENT_DUE' %}<i class="bi bi-calendar-event"></i>
+                    {% elif alert.alert_type == 'LOW_BALANCE' %}<i class="bi bi-exclamation-triangle"></i>
+                    {% elif alert.alert_type == 'LARGE_TRANSACTION' %}<i class="bi bi-arrow-up-circle"></i>
+                    {% elif alert.alert_type == 'LOAN_APPROVED' %}<i class="bi bi-check-circle"></i>
+                    {% else %}<i class="bi bi-info-circle"></i>
+                    {% endif %}
+                </div>
+                <div class="nb-alert-text small">{{ alert.message[:90] }}{% if alert.message|length > 90 %}…{% endif %}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Accounts -->
+        <div class="nb-sidebar-section">
+            <div class="nb-sidebar-section-title">
+                <i class="bi bi-wallet2 me-2"></i>Accounts
+            </div>
+            {% for acct in accounts %}
+            <button class="nb-acct-chip w-100 text-start"
+                    onclick="askAbout('What is my balance and recent transactions for account ending {{ acct.account_number[-4:] }}?')">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="small fw-semibold">
+                            {{ acct.product_name }}
+                        </div>
+                        <div class="nb-mono text-muted" style="font-size:0.72rem;">
+                            ···{{ acct.account_number[-4:] }}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="small fw-bold nb-balance-text">
+                            ${{ "{:,.2f}".format(acct.current_balance | float) }}
+                        </div>
+                        <div class="nb-product-type-badge">{{ acct.product_type }}</div>
+                    </div>
+                </div>
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Quick questions -->
+        <div class="nb-sidebar-section">
+            <div class="nb-sidebar-section-title">
+                <i class="bi bi-lightning-charge me-2"></i>Quick Questions
+            </div>
+            <div class="d-flex flex-column gap-2">
+                {% set quick = [
+                    ("bi-wallet2",        "What are all my account balances?"),
+                    ("bi-clock-history",  "Show me my last 10 transactions"),
+                    ("bi-house",          "What is my mortgage balance and next payment?"),
+                    ("bi-calendar-check", "When are all my loan payments due?"),
+                    ("bi-graph-up",       "Summarise my spending this month"),
+                    ("bi-credit-card",    "Show me my card details and limits"),
+                    ("bi-file-earmark",   "What is the status of my loan applications?"),
+                    ("bi-send",           "Show me my recent wire transfers"),
+                ] %}
+                {% for icon, question in quick %}
+                <button class="nb-quick-btn"
+                        onclick="askAbout('{{ question }}')">
+                    <i class="bi {{ icon }} me-2"></i>{{ question }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Sidebar toggle (mobile) -->
+        <button class="nb-sidebar-close d-lg-none" id="sidebarClose">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </aside>
+
+    <!-- ══════════════════════════════════════════════════════
+         MAIN CHAT PANEL
+    ══════════════════════════════════════════════════════════ -->
+    <div class="nb-chat-panel d-flex flex-column">
+
+        <!-- Chat toolbar -->
+        <div class="nb-chat-toolbar">
+            <!-- Mobile sidebar toggle -->
+            <button class="btn btn-sm nb-icon-btn d-lg-none me-2" id="sidebarToggle">
+                <i class="bi bi-layout-sidebar"></i>
+            </button>
+
+            <div class="d-flex align-items-center gap-2">
+                <div class="nb-ai-status-dot"></div>
+                <div>
+                    <div class="fw-semibold small">NexusBank AI Assistant</div>
+                    <div class="text-muted" style="font-size:0.7rem;">
+                        Powered by Claude · Live account data
+                    </div>
+                </div>
+            </div>
+
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <span class="nb-secure-badge">
+                    <i class="bi bi-shield-lock-fill me-1"></i>Secured
+                </span>
+                <button class="btn btn-sm nb-icon-btn" id="clearBtn"
+                        title="Clear conversation" onclick="clearChat()">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages area -->
+        <div class="nb-messages flex-grow-1" id="messagesContainer">
+
+            <!-- Welcome message (shown when no history) -->
+            {% if not history %}
+            <div class="nb-welcome" id="welcomeBlock">
+                <div class="nb-welcome-icon">
+                    <i class="bi bi-stars"></i>
+                </div>
+                <h4 class="fw-bold mb-2">
+                    Hello, {{ customer.first_name }}!
+                </h4>
+                <p class="text-muted mb-4">
+                    I'm your NexusBank AI assistant. I have access to your
+                    live account data and can answer questions about your
+                    balances, transactions, loans, cards, and more.
+                </p>
+                <div class="nb-welcome-chips d-flex flex-wrap gap-2 justify-content-center">
+                    {% for q in [
+                        "What are my account balances?",
+                        "When is my next loan payment?",
+                        "Show me recent transactions",
+                        "What is my mortgage rate?",
+                    ] %}
+                    <button class="nb-chip-btn" onclick="askAbout('{{ q }}')">
+                        {{ q }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Existing chat history (on page reload) -->
+            {% for msg in history %}
+                {% if msg.role == 'user' %}
+                <div class="nb-msg-row nb-msg-row-user">
+                    <div class="nb-bubble-user">{{ msg.content }}</div>
+                    <div class="nb-avatar-sm">
+                        {{ customer.first_name[0] }}{{ customer.last_name[0] }}
+                    </div>
+                </div>
+                {% else %}
+                <div class="nb-msg-row nb-msg-row-ai">
+                    <div class="nb-avatar-ai-sm"><i class="bi bi-stars"></i></div>
+                    <div class="nb-bubble-ai">{{ msg.content | safe }}</div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Input area -->
+        <div class="nb-input-area">
+            <div class="nb-input-wrapper">
+                <textarea
+                    id="msgInput"
+                    class="nb-textarea"
+                    placeholder="Ask about your accounts, loans, transactions…"
+                    rows="1"
+                    maxlength="1000"
+                ></textarea>
+                <button class="nb-send-btn" id="sendBtn" onclick="sendMessage()" title="Send">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </div>
+            <div class="nb-input-meta d-flex justify-content-between mt-1">
+                <span class="text-muted" style="font-size:0.68rem;">
+                    <i class="bi bi-lock-fill me-1 text-success"></i>
+                    Messages are processed securely. AI cannot execute transactions.
+                </span>
+                <span class="text-muted" style="font-size:0.68rem;" id="charCount">0 / 1000</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar overlay (mobile) -->
+    <div class="nb-sidebar-overlay d-lg-none" id="sidebarOverlay" onclick="closeSidebar()"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let isStreaming = false;
+let currentEventSource = null;
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const input      = document.getElementById('msgInput');
+const sendBtn    = document.getElementById('sendBtn');
+const container  = document.getElementById('messagesContainer');
+const welcome    = document.getElementById('welcomeBlock');
+const charCount  = document.getElementById('charCount');
+
+// ── Auto-resize textarea ──────────────────────────────────────────────────────
+input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+    charCount.textContent = input.value.length + ' / 1000';
+});
+
+// ── Enter = send (Shift+Enter = newline) ───────────────────────────────────────
+input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isStreaming) {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+// ── Quick question inject ─────────────────────────────────────────────────────
+function askAbout(question) {
+    input.value = question;
+    input.dispatchEvent(new Event('input'));
+    sendMessage();
+    // Close sidebar on mobile
+    closeSidebar();
+}
+
+// ── Send message ──────────────────────────────────────────────────────────────
+function sendMessage() {
+    const text = input.value.trim();
+    if (!text || isStreaming) return;
+
+    // Hide welcome block
+    if (welcome) welcome.style.display = 'none';
+
+    // Append user bubble
+    appendMessage('user', text);
+
+    // Reset input
+    input.value = '';
+    input.style.height = 'auto';
+    charCount.textContent = '0 / 1000';
+
+    // Create AI bubble (streaming target)
+    const aiBubble = createAIBubble();
+
+    // Lock UI
+    setStreaming(true);
+
+    // POST to /chat/send — returns SSE stream
+    fetch('/chat/send', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ message: text }),
+    }).then(response => {
+        if (!response.ok) {
+            aiBubble.textContent = 'Error: Could not send message. Please try again.';
+            setStreaming(false);
+            return;
+        }
+
+        const reader   = response.body.getReader();
+        const decoder  = new TextDecoder();
+        let   buffer   = '';
+        let   fullText = '';
+
+        function read() {
+            reader.read().then(({ done, value }) => {
+                if (done) {
+                    setStreaming(false);
+                    return;
+                }
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // incomplete line
+
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const raw = line.slice(6).trim();
+                    if (!raw) continue;
+
+                    try {
+                        const event = JSON.parse(raw);
+                        if (event.type === 'delta') {
+                            fullText += event.text;
+                            aiBubble.innerHTML = formatMarkdown(fullText);
+                            scrollToBottom();
+                        } else if (event.type === 'done') {
+                            setStreaming(false);
+                        } else if (event.type === 'error') {
+                            aiBubble.textContent = event.text || 'An error occurred.';
+                            setStreaming(false);
+                        }
+                    } catch (e) { /* ignore parse errors */ }
+                }
+                read();
+            });
+        }
+        read();
+    }).catch(() => {
+        aiBubble.textContent = 'Connection error. Please check your network and try again.';
+        setStreaming(false);
+    });
+}
+
+// ── DOM helpers ───────────────────────────────────────────────────────────────
+function appendMessage(role, text) {
+    if (role === 'user') {
+        const row = document.createElement('div');
+        row.className = 'nb-msg-row nb-msg-row-user';
+        row.innerHTML = `
+            <div class="nb-bubble-user">${escapeHtml(text)}</div>
+            <div class="nb-avatar-sm">{{ customer.first_name[0] }}{{ customer.last_name[0] }}</div>
+        `;
+        container.appendChild(row);
+    }
+    scrollToBottom();
+}
+
+function createAIBubble() {
+    const row = document.createElement('div');
+    row.className = 'nb-msg-row nb-msg-row-ai';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'nb-avatar-ai-sm';
+    avatar.innerHTML = '<i class="bi bi-stars"></i>';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'nb-bubble-ai';
+    bubble.innerHTML = '<span class="nb-typing-dots"><span></span><span></span><span></span></span>';
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    container.appendChild(row);
+    scrollToBottom();
+    return bubble;
+}
+
+function scrollToBottom() {
+    container.scrollTop = container.scrollHeight;
+}
+
+function setStreaming(state) {
+    isStreaming = state;
+    sendBtn.disabled = state;
+    input.disabled   = state;
+    if (state) {
+        sendBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+    } else {
+        sendBtn.innerHTML = '<i class="bi bi-send-fill"></i>';
+        input.focus();
+    }
+}
+
+// ── Clear conversation ────────────────────────────────────────────────────────
+function clearChat() {
+    if (isStreaming) return;
+    if (!confirm('Clear the conversation? This cannot be undone.')) return;
+    fetch('/chat/clear').then(() => location.reload());
+}
+
+// ── Full markdown → HTML renderer ────────────────────────────────────────────
+function formatMarkdown(text) {
+    let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // Remove --- horizontal rules
+    html = html.replace(/^-{3,}$/gm, '');
+
+    // Tables
+    html = html.replace(/^(\|.+\|\n)((?:\|[-:| ]+\|\n))((?:\|.+\|\n?)+)/gm, (match) => {
+        const rows = match.trim().split('\n').filter(r => r.trim());
+        const headers = rows[0].split('|').filter(c => c.trim())
+            .map(c => `<th>${c.trim()}</th>`).join('');
+        const body = rows.slice(2).map(row => {
+            const cells = row.split('|').filter(c => c.trim())
+                .map(c => `<td>${c.trim()}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+        return `<div class="nb-table-wrap"><table class="nb-table"><thead><tr>${headers}</tr></thead><tbody>${body}</tbody></table></div>`;
+    });
+
+    // Headings
+    html = html.replace(/^### (.+)$/gm, '<h6 class="nb-md-h">$1</h6>');
+    html = html.replace(/^## (.+)$/gm,  '<h5 class="nb-md-h">$1</h5>');
+    html = html.replace(/^# (.+)$/gm,   '<h5 class="nb-md-h">$1</h5>');
+
+    // Bold and italic
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/g,       '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g,              '<em>$1</em>');
+
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code class="nb-inline-code">$1</code>');
+
+    // Unordered lists
+    html = html.replace(/((?:^[\-\*\•] .+\n?)+)/gm, (block) => {
+        const items = block.trim().split('\n')
+            .map(l => `<li>${l.replace(/^[\-\*\•] /, '').trim()}</li>`).join('');
+        return `<ul class="nb-md-ul">${items}</ul>`;
+    });
+
+    // Ordered lists
+    html = html.replace(/((?:^\d+\. .+\n?)+)/gm, (block) => {
+        const items = block.trim().split('\n')
+            .map(l => `<li>${l.replace(/^\d+\. /, '').trim()}</li>`).join('');
+        return `<ol class="nb-md-ol">${items}</ol>`;
+    });
+
+    // Paragraphs and line breaks
+    html = html.replace(/\n{2,}/g, '</p><p class="nb-md-p">');
+    html = html.replace(/\n/g, '<br/>');
+    html = `<p class="nb-md-p">${html}</p>`;
+
+    return html;
+}
+
+
+function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+// ── Mobile sidebar ────────────────────────────────────────────────────────────
+document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+    document.getElementById('nbSidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('show');
+});
+
+document.getElementById('sidebarClose')?.addEventListener('click', closeSidebar);
+
+function closeSidebar() {
+    document.getElementById('nbSidebar')?.classList.remove('open');
+    document.getElementById('sidebarOverlay')?.classList.remove('show');
+}
+
+// ── Init: scroll to bottom if history exists ──────────────────────────────────
+window.addEventListener('load', () => {
+    scrollToBottom();
+    input.focus();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Application Detail',activeNav='loans'"
+      xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-file-earmark-text me-2"></i>Application Detail</h1>
+            <p class="nb-page-subtitle nb-mono"
+               th:text="${application != null ? application.applicationNumber : ''}">APP-XXX</p>
+        </div>
+        <div class="nb-page-actions">
+            <a th:href="@{/loans/applications/my}" class="nb-btn nb-btn-outline">
+                <i class="bi bi-arrow-left me-1"></i>My Applications
+            </a>
+        </div>
+    </div>
+
+    <div th:if="${application != null}"
+         th:with="statusName=${application.applicationStatus != null ? application.applicationStatus.name() : 'PENDING'},
+                statusLabel=${application.applicationStatus != null ? application.applicationStatus.displayName : 'Pending Review'}">
+
+        <!-- Status banner -->
+        <div class="nb-card nb-fade-in nb-delay-1" style="margin-bottom:20px;"
+             th:classappend="${statusName == 'APPROVED' ? 'nb-card-green' : (statusName == 'DECLINED' ? 'nb-card-red' : '')}">
+            <div class="nb-card-body"
+                 style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:14px;">
+          <span class="nb-badge"
+                th:classappend="${statusName == 'PENDING' ? 'nb-badge-warning' : (statusName == 'APPROVED' ? 'nb-badge-green' : (statusName == 'DECLINED' ? 'nb-badge-danger' : (statusName == 'UNDER_REVIEW' ? 'nb-badge-teal' : 'nb-badge-secondary')))}"
+                th:text="${statusLabel}" style="font-size:0.85rem; padding:6px 14px;">Pending</span>
+                    <span class="nb-text-muted" style="font-size:0.82rem;"
+                          th:text="'Submitted ' + ${#temporals.format(application.submittedAt, 'MMMM d, yyyy')}">Date</span>
+                </div>
+                <div th:if="${application.reviewedAt != null}" class="nb-text-muted" style="font-size:0.82rem;">
+                    Reviewed by <strong th:text="${application.reviewedBy}">Banker</strong>
+                    on <span th:text="${#temporals.format(application.reviewedAt, 'MMM d, yyyy')}">Date</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviewer notes if declined/approved -->
+        <div th:if="${application.reviewerNotes != null}"
+             class="nb-alert nb-fade-in nb-delay-1"
+             th:classappend="${statusName == 'APPROVED' ? 'nb-alert-info' : 'nb-alert-warning'}"
+             style="margin-bottom:20px;">
+            <i class="bi bi-chat-left-text"></i>
+            <div>
+                <div style="font-weight:600; font-size:0.82rem; margin-bottom:4px;">Reviewer Notes</div>
+                <span th:text="${application.reviewerNotes}">Notes</span>
+            </div>
+        </div>
+
+        <div class="nb-grid-2 nb-fade-in nb-delay-2">
+
+            <!-- Loan details -->
+            <div class="nb-card">
+                <div class="nb-card-header">
+                    <h2 class="nb-section-title mb-0"><i class="bi bi-cash-stack me-2"></i>Loan Details</h2>
+                </div>
+                <div class="nb-detail-grid">
+                    <div class="nb-detail-row">
+                        <span class="nb-detail-label">Loan Type</span>
+                        <span class="nb-detail-value" th:text="${application.loanType.displayName}">Mortgage</span>
+                    </div>
+                    <div class="nb-detail-row">
+                        <span class="nb-detail-label">Requested Amount</span>
+                        <span class="nb-detail-value nb-mono"
+                              th:text="'$' + ${#numbers.formatDecimal(application.requestedAmount, 1, 'COMMA', 2, 'POINT')}">$0</span>
+                    </div>
+                    <div class="nb-detail-row">
+                        <span class="nb-detail-label">Term</span>
+                        <span class="nb-detail-value nb-mono"
+                              th:text="${application.requestedTermMonths + ' months (' + application.requestedTermMonths/12 + ' years)'}">360</span>
+                    </div>
+                    <div class="nb-detail-row">
+                        <span class="nb-detail-label">Rate Type</span>
+                        <span class="nb-detail-value" th:text="${application.requestedRateType.displayName}">Fixed</span>
+                    </div>
+                    <div class="nb-detail-row" th:if="${application.purpose != null}">
+                        <span class="nb-detail-label">Purpose</span>
+                        <span class="nb-detail-value" th:text="${application.purpose}">Home Purchase</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mortgage property details -->
+            <div class="nb-card" th:if="${application.mortgageDetail != null}">
+                <div class="nb-card-header">
+                    <h2 class="nb-section-title mb-0"><i class="bi bi-house me-2"></i>Property Details</h2>
+                </div>
+                <div class="nb-detail-grid">
+                    <div class="nb-detail-row">
+                        <span class="nb-detail-label">Address</span>
+                        <span class="nb-detail-value"
+                              th:text="${application.mortgageDetail.propertyAddress}">Address</span>
+                    </div>
+                    <div class="nb-detail-row">
+                        <span class="nb-detail-label">City / State / ZIP</span>
+                        <span class="nb-detail-value"
+                              th:text="${application.mortgageDetail.propertyCity + ', '
+                           + application.mortgageDetail.propertyStateCode + ' '
+                           + application.mortgageDetail.propertyZip}">Chicago, IL 60614</span>
+                    </div>
+                    <div class="nb-detail-row">
+                        <span class="nb-detail-label">Property Type</span>
+                        <span class="nb-detail-value"
+                              th:text="${application.mortgageDetail.propertyType.displayName}">Single Family</span>
+                    </div>
+                    <div class="nb-detail-row">
+                        <span class="nb-detail-label">Purchase Price</span>
+                        <span class="nb-detail-value nb-mono"
+                              th:text="'$' + ${#numbers.formatDecimal(application.mortgageDetail.purchasePrice, 1, 'COMMA', 2, 'POINT')}">$0</span>
+                    </div>
+                    <div class="nb-detail-row">
+                        <span class="nb-detail-label">Down Payment</span>
+                        <span class="nb-detail-value nb-mono"
+                              th:text="'$' + ${#numbers.formatDecimal(application.mortgageDetail.downPayment, 1, 'COMMA', 2, 'POINT')}">$0</span>
+                    </div>
+                    <div class="nb-detail-row" th:if="${application.mortgageDetail.ltvRatio != null}">
+                        <span class="nb-detail-label">LTV Ratio</span>
+                        <span class="nb-detail-value nb-mono"
+                              th:text="${application.mortgageDetail.ltvRatio + '%'}">80%</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Not found -->
+    <div th:if="${application == null}" class="nb-card" style="padding:60px; text-align:center;">
+        <i class="bi bi-question-circle" style="font-size:3rem; opacity:0.3;"></i>
+        <h3 style="margin-top:16px;">Application Not Found</h3>
+        <a th:href="@{/loans/applications/my}" class="nb-btn nb-btn-outline" style="margin-top:16px; display:inline-flex;">
+            Back to My Applications
+        </a>
+    </div>
+
+</th:block>
+</html>

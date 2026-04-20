@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Alerts',activeNav='alerts'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-bell me-2"></i>Alerts &amp; Notifications</h1>
+            <p class="nb-page-subtitle">Your account alerts and security notifications</p>
+        </div>
+        <div class="nb-page-actions">
+        <span class="nb-badge nb-badge-gold"
+              th:text="${alerts != null ? alerts.size() : 0} + ' unread'">0 unread</span>
+        </div>
+    </div>
+
+    <!-- Alert List -->
+    <div class="nb-fade-in nb-delay-1" th:if="${alerts != null and !alerts.isEmpty()}">
+        <div th:each="alert, iStat : ${alerts}"
+             class="nb-card nb-fade-in"
+             th:classappend="'nb-delay-' + ${iStat.index % 4 + 1}"
+             style="margin-bottom:12px;">
+            <div class="nb-card-body" style="display:flex; align-items:flex-start; gap:16px;">
+                <div style="width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1.1rem;"
+                     th:classappend="${alert.alertType.name().contains('OVERDUE') or alert.alertType.name().contains('LOW_BALANCE')} ? 'nb-stat-icon red' : (${alert.alertType.name().contains('DUE')} ? 'nb-stat-icon gold' : 'nb-stat-icon blue')">
+                    <i class="bi"
+                       th:classappend="${alert.alertType.name().contains('OVERDUE')} ? 'bi-exclamation-circle-fill' : (${alert.alertType.name().contains('LOW_BALANCE')} ? 'bi-exclamation-triangle-fill' : (${alert.alertType.name().contains('DUE')} ? 'bi-clock-fill' : 'bi-info-circle-fill'))"></i>
+                </div>
+                <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <div style="font-weight:600; font-size:0.88rem;"
+                                 th:text="${alert.alertType.displayName}">Alert Type</div>
+                            <div class="nb-text-muted" style="font-size:0.83rem; margin-top:4px;"
+                                 th:text="${alert.message}">Alert message</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0; margin-left:16px;">
+                <span class="nb-mono nb-text-muted" style="font-size:0.72rem;"
+                      th:text="${#temporals.format(alert.createdAt, 'MMM d, yyyy')}">Date</span>
+                            <span class="nb-badge"
+                                  th:classappend="${alert.isRead} ? 'nb-badge-secondary' : 'nb-badge-gold'"
+                                  th:text="${alert.isRead} ? 'Read' : 'Unread'">Unread</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="nb-card nb-fade-in nb-delay-1" th:if="${alerts == null or alerts.isEmpty()}"
+         style="padding:60px 20px; text-align:center;">
+        <i class="bi bi-bell-slash" style="font-size:3rem; opacity:0.3;"></i>
+        <h3 style="margin-top:16px; font-size:1rem;">No Unread Alerts</h3>
+        <p class="nb-text-muted" style="margin-top:8px;">You're all caught up. We'll notify you of any important account activity.</p>
+    </div>
+
+    <!-- Alert Preferences -->
+    <div class="nb-card nb-fade-in nb-delay-2 mt-4">
+        <div class="nb-card-header">
+            <h2 class="nb-section-title mb-0"><i class="bi bi-sliders me-2"></i>Alert Preferences</h2>
+            <span class="nb-badge nb-badge-secondary">Coming Soon</span>
+        </div>
+        <div class="nb-card-body">
+            <div class="nb-grid-3">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--nb-border);">
+                    <div>
+                        <div style="font-size:0.85rem; font-weight:500;">Low Balance Alert</div>
+                        <div class="nb-text-muted" style="font-size:0.72rem;">Alert when balance drops below threshold</div>
+                    </div>
+                    <span class="nb-badge nb-badge-green">Active</span>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--nb-border);">
+                    <div>
+                        <div style="font-size:0.85rem; font-weight:500;">Payment Due Reminder</div>
+                        <div class="nb-text-muted" style="font-size:0.72rem;">Remind 5 days before loan payment</div>
+                    </div>
+                    <span class="nb-badge nb-badge-green">Active</span>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--nb-border);">
+                    <div>
+                        <div style="font-size:0.85rem; font-weight:500;">Large Transaction Alert</div>
+                        <div class="nb-text-muted" style="font-size:0.72rem;">Alert on transactions over $500</div>
+                    </div>
+                    <span class="nb-badge nb-badge-green">Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+</html>

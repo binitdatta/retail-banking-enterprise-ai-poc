@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Transfers',activeNav='transfers'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-send me-2"></i>Transfers &amp; Wire</h1>
+            <p class="nb-page-subtitle">Move money between your accounts or send a wire transfer</p>
+        </div>
+    </div>
+
+    <div class="nb-grid-2 nb-fade-in nb-delay-1">
+
+        <!-- Internal Transfer -->
+        <div class="nb-card">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-arrow-left-right me-2"></i>Internal Transfer</h2>
+            </div>
+            <div class="nb-card-body">
+                <div style="margin-bottom:14px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">From Account</label>
+                    <select class="nb-select" style="width:100%; margin-top:6px;">
+                        <option value="">Select account...</option>
+                        <option th:each="acct : ${accounts}"
+                                th:value="${acct.id}"
+                                th:text="${acct.maskedAccountNumber + ' — $' + acct.currentBalance}">Account</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">To Account</label>
+                    <select class="nb-select" style="width:100%; margin-top:6px;">
+                        <option value="">Select account...</option>
+                        <option th:each="acct : ${accounts}"
+                                th:value="${acct.id}"
+                                th:text="${acct.maskedAccountNumber}">Account</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Amount</label>
+                    <input class="nb-input" type="number" placeholder="0.00" step="0.01" min="0.01" style="margin-top:6px;"/>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Memo (optional)</label>
+                    <input class="nb-input" type="text" placeholder="Transfer memo..." style="margin-top:6px;"/>
+                </div>
+                <div class="nb-alert nb-alert-info" style="margin-bottom:16px;">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Internal transfers are processed instantly during business hours.</span>
+                </div>
+                <button class="nb-btn nb-btn-primary" style="width:100%;" disabled>
+                    <i class="bi bi-arrow-left-right me-1"></i>Submit Transfer
+                </button>
+                <p class="nb-text-muted" style="font-size:0.72rem; text-align:center; margin-top:8px;">Online transfer functionality coming soon. Visit a branch for immediate assistance.</p>
+            </div>
+        </div>
+
+        <!-- Wire Transfer -->
+        <div class="nb-card">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-bank me-2"></i>Wire Transfer</h2>
+                <span class="nb-badge nb-badge-warning">Requires Verification</span>
+            </div>
+            <div class="nb-card-body">
+                <div style="margin-bottom:14px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">From Account</label>
+                    <select class="nb-select" style="width:100%; margin-top:6px;">
+                        <option value="">Select account...</option>
+                        <option th:each="acct : ${accounts}"
+                                th:value="${acct.id}"
+                                th:text="${acct.maskedAccountNumber}">Account</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Recipient Name</label>
+                    <input class="nb-input" type="text" placeholder="Full legal name..." style="margin-top:6px;"/>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Routing Number</label>
+                    <input class="nb-input" type="text" placeholder="9-digit ABA routing number..." style="margin-top:6px;"/>
+                </div>
+                <div style="margin-bottom:14px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Account Number</label>
+                    <input class="nb-input" type="text" placeholder="Recipient account number..." style="margin-top:6px;"/>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label class="nb-text-muted" style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Amount</label>
+                    <input class="nb-input" type="number" placeholder="0.00" step="0.01" min="0.01" style="margin-top:6px;"/>
+                </div>
+                <div class="nb-alert nb-alert-warning" style="margin-bottom:16px;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span>Wire transfers are irreversible. A $25 fee applies per domestic wire.</span>
+                </div>
+                <button class="nb-btn nb-btn-gold" style="width:100%;" disabled>
+                    <i class="bi bi-send me-1"></i>Initiate Wire Transfer
+                </button>
+                <p class="nb-text-muted" style="font-size:0.72rem; text-align:center; margin-top:8px;">Wire functionality coming soon. Call 1-800-NEXUS-BK for wire assistance.</p>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+</html>

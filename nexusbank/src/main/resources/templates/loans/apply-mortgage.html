@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Mortgage Application',activeNav='loans'"
+      xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-house-fill me-2"></i>Mortgage Application</h1>
+            <p class="nb-page-subtitle">Complete all sections. Your application will be reviewed within 2 business days.</p>
+        </div>
+        <div class="nb-page-actions">
+            <a th:href="@{/loans/apply}" class="nb-btn nb-btn-outline">
+                <i class="bi bi-arrow-left me-1"></i>Back
+            </a>
+        </div>
+    </div>
+
+    <form th:action="@{/loans/applications/mortgage/submit}"
+          th:object="${mortgageForm}"
+          method="post"
+          novalidate>
+
+        <!-- Global validation errors — must be inside form with th:object -->
+        <div th:if="${#fields.hasGlobalErrors()}"
+             class="nb-alert nb-alert-danger nb-fade-in" style="margin-bottom:20px;">
+            <i class="bi bi-exclamation-circle"></i>
+            <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">Error</span>
+        </div>
+
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <!-- ── SECTION 1: Loan Parameters ──────────────────────────────────────── -->
+        <div class="nb-card nb-fade-in nb-delay-1" style="margin-bottom:20px;">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-cash-stack me-2"></i>Loan Parameters</h2>
+                <span class="nb-badge nb-badge-secondary">Section 1 of 4</span>
+            </div>
+            <div class="nb-card-body">
+                <div class="nb-grid-3">
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Loan Amount <span class="nb-required">*</span></label>
+                        <div class="nb-input-prefix-wrap">
+                            <span class="nb-input-prefix">$</span>
+                            <input class="nb-input nb-input-prefixed"
+                                   th:field="*{requestedAmount}"
+                                   th:classappend="${#fields.hasErrors('requestedAmount')} ? 'nb-input-error'"
+                                   type="number" step="1000" min="100000" max="5000000"
+                                   placeholder="350,000"/>
+                        </div>
+                        <div class="nb-field-error" th:if="${#fields.hasErrors('requestedAmount')}"
+                             th:errors="*{requestedAmount}">Error</div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Loan Term <span class="nb-required">*</span></label>
+                        <select class="nb-select"
+                                th:field="*{requestedTermMonths}"
+                                th:classappend="${#fields.hasErrors('requestedTermMonths')} ? 'nb-input-error'"
+                                style="width:100%;">
+                            <option value="">Select term...</option>
+                            <option th:each="term : ${termOptions}"
+                                    th:value="${term}"
+                                    th:text="${term + ' months (' + term/12 + ' years)'}">360 months</option>
+                        </select>
+                        <div class="nb-field-error" th:if="${#fields.hasErrors('requestedTermMonths')}"
+                             th:errors="*{requestedTermMonths}">Error</div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Rate Type <span class="nb-required">*</span></label>
+                        <select class="nb-select" th:field="*{requestedRateType}" style="width:100%;">
+                            <option th:each="rt : ${rateTypes}"
+                                    th:value="${rt.name()}"
+                                    th:text="${rt.displayName}">Fixed</option>
+                        </select>
+                    </div>
+
+                    <div class="nb-form-group" style="grid-column: 1 / -1;">
+                        <label class="nb-form-label">Loan Purpose</label>
+                        <input class="nb-input" th:field="*{purpose}"
+                               type="text" placeholder="e.g. Primary home purchase"/>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ── SECTION 2: Property Details ─────────────────────────────────────── -->
+        <div class="nb-card nb-fade-in nb-delay-1" style="margin-bottom:20px;">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-house me-2"></i>Property Details</h2>
+                <span class="nb-badge nb-badge-secondary">Section 2 of 4</span>
+            </div>
+            <div class="nb-card-body">
+                <div class="nb-grid-3">
+
+                    <div class="nb-form-group" style="grid-column: 1 / -1;">
+                        <label class="nb-form-label">Property Address <span class="nb-required">*</span></label>
+                        <input class="nb-input" th:field="*{propertyAddress}"
+                               th:classappend="${#fields.hasErrors('propertyAddress')} ? 'nb-input-error'"
+                               type="text" placeholder="123 Main St, Unit 4B"/>
+                        <div class="nb-field-error" th:if="${#fields.hasErrors('propertyAddress')}"
+                             th:errors="*{propertyAddress}">Error</div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">City <span class="nb-required">*</span></label>
+                        <input class="nb-input" th:field="*{propertyCity}"
+                               th:classappend="${#fields.hasErrors('propertyCity')} ? 'nb-input-error'"
+                               type="text" placeholder="Chicago"/>
+                        <div class="nb-field-error" th:if="${#fields.hasErrors('propertyCity')}"
+                             th:errors="*{propertyCity}">Error</div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">State <span class="nb-required">*</span></label>
+                        <input class="nb-input" th:field="*{propertyStateCode}"
+                               th:classappend="${#fields.hasErrors('propertyStateCode')} ? 'nb-input-error'"
+                               type="text" maxlength="2" placeholder="IL" style="text-transform:uppercase;"/>
+                        <div class="nb-field-error" th:if="${#fields.hasErrors('propertyStateCode')}"
+                             th:errors="*{propertyStateCode}">Error</div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">ZIP Code <span class="nb-required">*</span></label>
+                        <input class="nb-input" th:field="*{propertyZip}"
+                               th:classappend="${#fields.hasErrors('propertyZip')} ? 'nb-input-error'"
+                               type="text" placeholder="60614"/>
+                        <div class="nb-field-error" th:if="${#fields.hasErrors('propertyZip')}"
+                             th:errors="*{propertyZip}">Error</div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Property Type <span class="nb-required">*</span></label>
+                        <select class="nb-select" th:field="*{propertyType}"
+                                th:classappend="${#fields.hasErrors('propertyType')} ? 'nb-input-error'"
+                                style="width:100%;">
+                            <option value="">Select type...</option>
+                            <option th:each="pt : ${propertyTypes}"
+                                    th:value="${pt.name()}"
+                                    th:text="${pt.displayName}">Single Family</option>
+                        </select>
+                        <div class="nb-field-error" th:if="${#fields.hasErrors('propertyType')}"
+                             th:errors="*{propertyType}">Error</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ── SECTION 3: Financial Details ────────────────────────────────────── -->
+        <div class="nb-card nb-fade-in nb-delay-2" style="margin-bottom:20px;">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-graph-up me-2"></i>Financial Details</h2>
+                <span class="nb-badge nb-badge-secondary">Section 3 of 4</span>
+            </div>
+            <div class="nb-card-body">
+                <div class="nb-grid-3">
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Purchase Price <span class="nb-required">*</span></label>
+                        <div class="nb-input-prefix-wrap">
+                            <span class="nb-input-prefix">$</span>
+                            <input class="nb-input nb-input-prefixed" th:field="*{purchasePrice}"
+                                   th:classappend="${#fields.hasErrors('purchasePrice')} ? 'nb-input-error'"
+                                   type="number" step="1000" min="50000" placeholder="425,000"/>
+                        </div>
+                        <div class="nb-field-error" th:if="${#fields.hasErrors('purchasePrice')}"
+                             th:errors="*{purchasePrice}">Error</div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Down Payment <span class="nb-required">*</span></label>
+                        <div class="nb-input-prefix-wrap">
+                            <span class="nb-input-prefix">$</span>
+                            <input class="nb-input nb-input-prefixed" th:field="*{downPayment}"
+                                   th:classappend="${#fields.hasErrors('downPayment')} ? 'nb-input-error'"
+                                   type="number" step="500" min="0" placeholder="85,000"/>
+                        </div>
+                        <div class="nb-field-error" th:if="${#fields.hasErrors('downPayment')}"
+                             th:errors="*{downPayment}">Error</div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Annual Property Tax</label>
+                        <div class="nb-input-prefix-wrap">
+                            <span class="nb-input-prefix">$</span>
+                            <input class="nb-input nb-input-prefixed" th:field="*{annualPropertyTax}"
+                                   type="number" step="100" min="0" placeholder="6,500"/>
+                        </div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Annual Home Insurance</label>
+                        <div class="nb-input-prefix-wrap">
+                            <span class="nb-input-prefix">$</span>
+                            <input class="nb-input nb-input-prefixed" th:field="*{annualInsurance}"
+                                   type="number" step="100" min="0" placeholder="1,800"/>
+                        </div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Monthly HOA Fee</label>
+                        <div class="nb-input-prefix-wrap">
+                            <span class="nb-input-prefix">$</span>
+                            <input class="nb-input nb-input-prefixed" th:field="*{hoaMonthlyFee}"
+                                   type="number" step="50" min="0" placeholder="0"/>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ── SECTION 4: Borrower & Closing Details ────────────────────────────── -->
+        <div class="nb-card nb-fade-in nb-delay-2" style="margin-bottom:20px;">
+            <div class="nb-card-header">
+                <h2 class="nb-section-title mb-0"><i class="bi bi-person-lines-fill me-2"></i>Borrower &amp; Closing Details</h2>
+                <span class="nb-badge nb-badge-secondary">Section 4 of 4</span>
+            </div>
+            <div class="nb-card-body">
+
+                <!-- Checkboxes -->
+                <div style="display:flex; gap:32px; margin-bottom:24px; flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.88rem;">
+                        <input type="checkbox" th:field="*{primaryResidence}"
+                               style="width:16px; height:16px; accent-color:var(--nb-blue);"/>
+                        <span>This is my primary residence</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.88rem;">
+                        <input type="checkbox" th:field="*{firstTimeBuyer}"
+                               style="width:16px; height:16px; accent-color:var(--nb-blue);"/>
+                        <span>I am a first-time homebuyer</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.88rem;">
+                        <input type="checkbox" th:field="*{hasExistingMortgage}"
+                               style="width:16px; height:16px; accent-color:var(--nb-blue);"/>
+                        <span>I have an existing mortgage</span>
+                    </label>
+                </div>
+
+                <div class="nb-grid-3">
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Co-Borrower Name</label>
+                        <input class="nb-input" th:field="*{coBorrowerName}"
+                               type="text" placeholder="Full legal name (if applicable)"/>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Co-Borrower Annual Income</label>
+                        <div class="nb-input-prefix-wrap">
+                            <span class="nb-input-prefix">$</span>
+                            <input class="nb-input nb-input-prefixed" th:field="*{coBorrowerIncome}"
+                                   type="number" step="1000" min="0" placeholder="0"/>
+                        </div>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Preferred Closing Date</label>
+                        <input class="nb-input" th:field="*{preferredClosingDate}"
+                               type="date" th:min="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"/>
+                    </div>
+
+                    <div class="nb-form-group">
+                        <label class="nb-form-label">Realtor / Agent Name</label>
+                        <input class="nb-input" th:field="*{realtorName}"
+                               type="text" placeholder="Agent name (if applicable)"/>
+                    </div>
+
+                    <div class="nb-form-group" style="grid-column: 1 / -1;">
+                        <label class="nb-form-label">Additional Notes</label>
+                        <textarea class="nb-input" th:field="*{additionalNotes}"
+                                  rows="3" placeholder="Any additional information for the underwriter..."></textarea>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Applicant info pre-filled notice -->
+        <div class="nb-alert nb-alert-info nb-fade-in nb-delay-3" style="margin-bottom:20px;">
+            <i class="bi bi-info-circle"></i>
+            <span>Your income, employment, and credit score on file will be automatically included with this application. Ensure your <a th:href="@{/profile}" style="color:var(--nb-gold);">profile</a> is up to date.</span>
+        </div>
+
+        <!-- Submit -->
+        <div class="nb-card nb-fade-in nb-delay-3">
+            <div class="nb-card-body" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+                <div>
+                    <div style="font-weight:600; font-size:0.9rem;">Ready to Submit?</div>
+                    <div class="nb-text-muted" style="font-size:0.8rem;">
+                        By submitting you agree that all information provided is accurate and complete.
+                    </div>
+                </div>
+                <div style="display:flex; gap:12px;">
+                    <a th:href="@{/loans/apply}" class="nb-btn nb-btn-outline">Cancel</a>
+                    <button type="submit" class="nb-btn nb-btn-gold" style="min-width:160px;">
+                        <i class="bi bi-send me-2"></i>Submit Application
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+    <style>
+        .nb-form-group        { display:flex; flex-direction:column; gap:6px; margin-bottom:4px; }
+        .nb-form-label        { font-size:0.78rem; font-weight:600; text-transform:uppercase;
+                                letter-spacing:0.06em; color:var(--nb-text-muted); }
+        .nb-required          { color:var(--nb-red); }
+        .nb-input-prefix-wrap { position:relative; }
+        .nb-input-prefix      { position:absolute; left:12px; top:50%; transform:translateY(-50%);
+                                color:var(--nb-text-muted); font-size:0.9rem; pointer-events:none; }
+        .nb-input-prefixed    { padding-left:28px !important; }
+        .nb-input-error       { border-color:var(--nb-red) !important; }
+        .nb-field-error       { font-size:0.75rem; color:var(--nb-red); margin-top:2px; }
+        textarea.nb-input     { resize:vertical; min-height:80px; }
+    </style>
+
+</th:block>
+</html>

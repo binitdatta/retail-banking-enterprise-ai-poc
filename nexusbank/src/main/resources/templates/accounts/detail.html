@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Account Detail',activeNav='accounts'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+  <!-- Breadcrumb -->
+  <nav class="nb-breadcrumb nb-fade-in">
+    <a th:href="@{/nexusbank/dashboard}" class="nb-link-muted">Dashboard</a>
+    <i class="bi bi-chevron-right"></i>
+    <a th:href="@{/nexusbank/accounts}" class="nb-link-muted">Accounts</a>
+    <i class="bi bi-chevron-right"></i>
+    <span th:text="${account.maskedAccountNumber}">••••1234</span>
+  </nav>
+
+  <!-- Account Header Card -->
+  <div class="nb-hero-card nb-fade-in nb-delay-1">
+    <div class="nb-hero-card-accent"
+         th:classappend="${account.accountProduct.productType.name() == 'CHECKING'} ? 'nb-bar-blue' :
+                           (${account.accountProduct.productType.name() == 'SAVINGS'} ? 'nb-bar-green' :
+                           (${account.accountProduct.productType.name() == 'MONEY_MARKET'} ? 'nb-bar-purple' :
+                           (${account.accountProduct.productType.name() == 'CD'} ? 'nb-bar-gold' : 'nb-bar-teal')))"></div>
+    <div class="nb-hero-card-body">
+      <div class="nb-hero-top">
+        <div>
+          <h1 class="nb-hero-title" th:text="${account.nickname != null ? account.nickname : account.accountProduct.productName}">Account</h1>
+          <div class="nb-hero-subtitle">
+            <span class="nb-mono" th:text="${account.accountNumber}">Full account number</span>
+            <span class="nb-separator">|</span>
+            <span th:text="${account.accountProduct.productType.displayName}">Type</span>
+            <span class="nb-separator">|</span>
+            <span th:text="${account.routingNumber != null ? 'Routing: ' + account.routingNumber : ''}"></span>
+          </div>
+        </div>
+        <span class="nb-badge nb-badge-lg"
+              th:classappend="${account.accountStatus.name() == 'ACTIVE'} ? 'nb-badge-green' :
+                                (${account.accountStatus.name() == 'FROZEN'} ? 'nb-badge-warning' : 'nb-badge-secondary')"
+              th:text="${account.accountStatus.displayName}">Active</span>
+      </div>
+      <div class="nb-hero-balances">
+        <div class="nb-hero-bal-block">
+          <div class="nb-hero-bal-label">Current Balance</div>
+          <div class="nb-hero-bal-value nb-amount-positive"
+               th:text="'$' + ${#numbers.formatDecimal(account.currentBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+        </div>
+        <div class="nb-hero-bal-block">
+          <div class="nb-hero-bal-label">Available Balance</div>
+          <div class="nb-hero-bal-value nb-mono"
+               th:text="'$' + ${#numbers.formatDecimal(account.availableBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+        </div>
+        <div class="nb-hero-bal-block" th:if="${account.annualPercentageYield != null}">
+          <div class="nb-hero-bal-label">Annual Percentage Yield</div>
+          <div class="nb-hero-bal-value nb-text-gold"
+               th:text="${#numbers.formatDecimal(account.annualPercentageYield, 1, 'NONE', 2, 'POINT')} + '%'">0.00%</div>
+        </div>
+        <div class="nb-hero-bal-block" th:if="${account.overdraftLimit != null}">
+          <div class="nb-hero-bal-label">Overdraft Limit</div>
+          <div class="nb-hero-bal-value nb-mono"
+               th:text="'$' + ${#numbers.formatDecimal(account.overdraftLimit, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+        </div>
+      </div>
+
+      <!-- CD Maturity Bar -->
+      <div th:if="${account.maturityDate != null}" class="nb-cd-maturity mt-3">
+        <div class="nb-cd-label">
+          <span>CD Maturity</span>
+          <span class="nb-mono" th:text="${#temporals.format(account.maturityDate, 'MMMM d, yyyy')}">Date</span>
+        </div>
+        <div class="nb-progress-bar">
+          <div class="nb-progress-fill nb-progress-gold" th:style="'width: ' + ${cdProgress} + '%'"></div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="nb-hero-actions mt-4">
+        <button class="nb-btn nb-btn-primary" disabled><i class="bi bi-arrow-left-right me-1"></i>Transfer</button>
+        <button class="nb-btn nb-btn-ghost" disabled><i class="bi bi-download me-1"></i>Statement</button>
+        <button class="nb-btn nb-btn-ghost" disabled><i class="bi bi-bell me-1"></i>Set Alert</button>
+        <div sec:authorize="hasRole('NEXUS_BANKER') or hasRole('NEXUS_ADMIN')">
+          <button class="nb-btn nb-btn-ghost" disabled><i class="bi bi-pencil me-1"></i>Edit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction History -->
+  <div class="nb-card nb-fade-in nb-delay-2 mt-4">
+    <div class="nb-card-header">
+      <h2 class="nb-section-title mb-0"><i class="bi bi-clock-history me-2"></i>Transaction History</h2>
+      <div class="nb-filter-row">
+        <select class="nb-select" id="txn-type-filter">
+          <option value="">All Types</option>
+          <option value="CREDIT">Credits</option>
+          <option value="DEBIT">Debits</option>
+        </select>
+        <select class="nb-select" id="txn-status-filter">
+          <option value="">All Status</option>
+          <option value="POSTED">Posted</option>
+          <option value="PENDING">Pending</option>
+        </select>
+      </div>
+    </div>
+    <div class="nb-table-wrapper">
+      <table class="nb-table" id="txn-table">
+        <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Category</th>
+          <th>Channel</th>
+          <th class="text-end">Amount</th>
+          <th class="text-end">Balance</th>
+          <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="txn, iStat : ${transactions}"
+            class="nb-fade-in"
+            th:classappend="'nb-delay-' + ${iStat.index % 5}"
+            th:data-type="${txn.transactionType.name()}"
+            th:data-status="${txn.status.name()}">
+          <td>
+            <div class="nb-mono" th:text="${#temporals.format(txn.transactionDate, 'MMM d, yyyy')}">Date</div>
+            <div class="nb-text-muted" style="font-size:0.68rem;" th:text="${#temporals.format(txn.transactionDate, 'h:mm a')}">Time</div>
+          </td>
+          <td>
+            <div th:text="${txn.description}">Description</div>
+            <div class="nb-text-muted" style="font-size:0.72rem;"
+                 th:if="${txn.merchantName != null}"
+                 th:text="${txn.merchantName} + (${txn.merchantCity != null} ? ', ' + ${txn.merchantCity} : '')">Merchant</div>
+            <div class="nb-mono nb-text-muted" style="font-size:0.68rem;"
+                 th:if="${txn.referenceNumber != null}"
+                 th:text="'Ref: ' + ${txn.referenceNumber}">Ref</div>
+          </td>
+          <td>
+                <span class="nb-badge nb-badge-secondary"
+                      th:text="${txn.transactionCategory != null ? txn.transactionCategory.categoryName : 'Uncategorized'}">Cat</span>
+          </td>
+          <td>
+                <span class="nb-badge nb-badge-secondary"
+                      th:text="${txn.channel != null ? txn.channel.displayName : 'N/A'}">Channel</span>
+          </td>
+          <td class="text-end nb-mono"
+              th:classappend="${txn.transactionType.name() == 'CREDIT'} ? 'nb-amount-positive' : 'nb-amount-negative'"
+              th:text="${txn.transactionType.name() == 'CREDIT' ? '+' : '-'} + '$' + ${#numbers.formatDecimal(txn.amount, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+          <td class="text-end nb-mono"
+              th:text="'$' + ${#numbers.formatDecimal(txn.runningBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+          <td>
+                <span class="nb-badge"
+                      th:classappend="${txn.status.name() == 'POSTED'} ? 'nb-badge-green' :
+                                      (${txn.status.name() == 'PENDING'} ? 'nb-badge-warning' : 'nb-badge-secondary')"
+                      th:text="${txn.status.displayName}">Status</span>
+          </td>
+        </tr>
+        <tr th:if="${transactions == null or transactions.isEmpty()}">
+          <td colspan="7" class="text-center nb-text-muted py-4">No transactions found for this account.</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Beneficiaries (if any) -->
+  <div class="nb-card nb-fade-in nb-delay-3 mt-4" th:if="${beneficiaries != null and !beneficiaries.isEmpty()}">
+    <div class="nb-card-header">
+      <h2 class="nb-section-title mb-0"><i class="bi bi-people me-2"></i>Beneficiaries</h2>
+    </div>
+    <div class="nb-table-wrapper">
+      <table class="nb-table">
+        <thead>
+        <tr><th>Name</th><th>Relationship</th><th>Allocation</th><th>SSN (masked)</th><th>Primary</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="ben : ${beneficiaries}">
+          <td th:text="${ben.beneficiaryName}">Name</td>
+          <td th:text="${ben.relationship}">Relationship</td>
+          <td class="nb-mono" th:text="${ben.allocationPercent} + '%'">100%</td>
+          <td class="nb-mono nb-text-muted">•••–••–<span th:text="${ben.ssnLast4}">1234</span></td>
+          <td><span th:if="${ben.isPrimary}" class="nb-badge nb-badge-gold">Primary</span></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</th:block>
+
+<script th:inline="javascript">
+  // Transaction filter
+  function filterTxns() {
+    const type = document.getElementById('txn-type-filter').value;
+    const status = document.getElementById('txn-status-filter').value;
+    document.querySelectorAll('#txn-table tbody tr[data-type]').forEach(row => {
+      const matchType = !type || row.dataset.type === type;
+      const matchStatus = !status || row.dataset.status === status;
+      row.style.display = matchType && matchStatus ? '' : 'none';
+    });
+  }
+  document.getElementById('txn-type-filter').addEventListener('change', filterTxns);
+  document.getElementById('txn-status-filter').addEventListener('change', filterTxns);
+</script>
+</html>

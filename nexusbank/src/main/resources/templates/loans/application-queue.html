@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Application Queue',activeNav='customers'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-inbox me-2"></i>Loan Application Queue</h1>
+            <p class="nb-page-subtitle">Review and action pending mortgage applications</p>
+        </div>
+        <div class="nb-page-actions">
+      <span class="nb-badge nb-badge-warning"
+            th:text="${pendingCount} + ' pending'">0 pending</span>
+        </div>
+    </div>
+
+    <div class="nb-card nb-fade-in nb-delay-1">
+        <div class="nb-table-wrapper">
+            <table class="nb-table">
+                <thead>
+                <tr>
+                    <th>Application #</th>
+                    <th>Applicant</th>
+                    <th>Type</th>
+                    <th class="text-end">Amount</th>
+                    <th>Term</th>
+                    <th>Credit Score</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                    <th class="text-center">Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="app, iStat : ${applications}"
+                    class="nb-fade-in" th:classappend="'nb-delay-' + ${iStat.index % 5}">
+
+                    <td class="nb-mono nb-text-muted" style="font-size:0.78rem;"
+                        th:text="${app.applicationNumber}">APP-XXX</td>
+
+                    <td>
+                        <div style="font-weight:600; font-size:0.85rem;"
+                             th:text="${app.customer.fullName}">Name</div>
+                        <div class="nb-text-muted" style="font-size:0.72rem;"
+                             th:text="${app.customer.email}">email</div>
+                    </td>
+
+                    <td>
+              <span class="nb-badge nb-badge-secondary"
+                    th:text="${app.loanType.displayName}">Mortgage</span>
+                    </td>
+
+                    <td class="text-end nb-mono"
+                        th:text="'$' + ${#numbers.formatDecimal(app.requestedAmount, 1, 'COMMA', 0, 'POINT')}">$0</td>
+
+                    <td class="nb-mono nb-text-muted"
+                        th:text="${app.requestedTermMonths / 12 + ' yr'}">30 yr</td>
+
+                    <td class="nb-mono text-center"
+                        th:classappend="${app.applicantCreditScore != null and app.applicantCreditScore >= 750} ? 'nb-amount-positive' :
+                               (${app.applicantCreditScore != null and app.applicantCreditScore >= 670} ? '' : 'nb-amount-negative')"
+                        th:text="${app.applicantCreditScore != null ? app.applicantCreditScore : 'N/A'}">750</td>
+
+                    <td class="nb-mono nb-text-muted" style="font-size:0.78rem;"
+                        th:text="${#temporals.format(app.submittedAt, 'MMM d, yyyy')}">Date</td>
+
+                    <td>
+              <span class="nb-badge"
+                    th:classappend="${app.applicationStatus.name() == 'PENDING'} ? 'nb-badge-warning' :
+                                   (${app.applicationStatus.name() == 'APPROVED'} ? 'nb-badge-green' :
+                                   (${app.applicationStatus.name() == 'DECLINED'} ? 'nb-badge-danger' :
+                                   (${app.applicationStatus.name() == 'UNDER_REVIEW'} ? 'nb-badge-teal' : 'nb-badge-secondary')))"
+                    th:text="${app.applicationStatus.displayName}">Pending</span>
+                    </td>
+
+                    <td class="text-center">
+                        <div style="display:flex; gap:6px; justify-content:center; align-items:center;">
+                            <a th:href="@{/loans/applications/{id}(id=${app.id})}"
+                               class="nb-btn nb-btn-sm nb-btn-outline" title="View Detail">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            <!-- Review form — only for actionable statuses -->
+                            <div th:if="${app.applicationStatus.name() == 'PENDING' or app.applicationStatus.name() == 'UNDER_REVIEW'}"
+                                 style="display:flex; gap:4px;">
+                                <form th:action="@{/loans/applications/banker/review/{id}(id=${app.id})}"
+                                      method="post" style="display:inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <input type="hidden" name="status" value="UNDER_REVIEW"/>
+                                    <input type="hidden" name="reviewerNotes" value="Application moved to active review."/>
+                                    <button type="submit" class="nb-btn nb-btn-sm nb-btn-outline" title="Mark Under Review"
+                                            th:if="${app.applicationStatus.name() == 'PENDING'}">
+                                        <i class="bi bi-eye-fill" style="color:var(--nb-blue-light);"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/loans/applications/banker/review/{id}(id=${app.id})}"
+                                      method="post" style="display:inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <input type="hidden" name="status" value="APPROVED"/>
+                                    <input type="hidden" name="reviewerNotes" value="Application approved after review."/>
+                                    <button type="submit" class="nb-btn nb-btn-sm nb-btn-outline" title="Approve"
+                                            onclick="return confirm('Approve this application?')">
+                                        <i class="bi bi-check-lg" style="color:var(--nb-green);"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/loans/applications/banker/review/{id}(id=${app.id})}"
+                                      method="post" style="display:inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <input type="hidden" name="status" value="DECLINED"/>
+                                    <input type="hidden" name="reviewerNotes" value="Application declined after review."/>
+                                    <button type="submit" class="nb-btn nb-btn-sm nb-btn-outline" title="Decline"
+                                            onclick="return confirm('Decline this application?')">
+                                        <i class="bi bi-x-lg" style="color:var(--nb-red);"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </td>
+
+                </tr>
+                <tr th:if="${applications == null or applications.isEmpty()}">
+                    <td colspan="9" class="text-center nb-text-muted" style="padding:40px;">
+                        No applications found.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Flash messages -->
+    <div th:if="${successMessage}"
+         class="nb-alert nb-alert-info nb-fade-in" style="margin-top:16px;">
+        <i class="bi bi-check-circle"></i>
+        <span th:text="${successMessage}">Success</span>
+    </div>
+
+</th:block>
+</html>

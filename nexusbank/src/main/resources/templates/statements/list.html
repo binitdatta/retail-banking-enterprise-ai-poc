@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Statements',activeNav='statements'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-file-earmark-text me-2"></i>Statements</h1>
+            <p class="nb-page-subtitle">Download monthly account statements</p>
+        </div>
+    </div>
+
+    <!-- Account selector -->
+    <div class="nb-card nb-fade-in nb-delay-1" style="margin-bottom:20px;">
+        <div class="nb-card-body" style="display:flex; align-items:center; gap:16px;">
+            <i class="bi bi-bank2" style="font-size:1.4rem; color:var(--nb-gold);"></i>
+            <div style="flex:1;">
+                <div style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--nb-text-muted); margin-bottom:6px;">Select Account</div>
+                <select class="nb-select" id="stmt-acct" style="min-width:280px;">
+                    <option value="">All Accounts</option>
+                    <option th:each="acct : ${accounts}"
+                            th:value="${acct.id}"
+                            th:text="${acct.maskedAccountNumber}">Account</option>
+                </select>
+            </div>
+            <div>
+                <div style="font-size:0.78rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--nb-text-muted); margin-bottom:6px;">Year</div>
+                <select class="nb-select">
+                    <option>2026</option>
+                    <option>2025</option>
+                    <option>2024</option>
+                    <option>2023</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statement rows -->
+    <div class="nb-card nb-fade-in nb-delay-2">
+        <div class="nb-card-header">
+            <h2 class="nb-section-title mb-0"><i class="bi bi-calendar3 me-2"></i>Available Statements</h2>
+            <span class="nb-badge nb-badge-secondary">PDF Download</span>
+        </div>
+        <div class="nb-table-wrapper">
+            <table class="nb-table">
+                <thead>
+                <tr>
+                    <th>Period</th>
+                    <th>Account</th>
+                    <th>Type</th>
+                    <th class="text-end">Closing Balance</th>
+                    <th>Status</th>
+                    <th class="text-center">Download</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- Static demo rows -->
+                <tr th:each="acct : ${accounts}">
+                    <td class="nb-mono">March 2026</td>
+                    <td class="nb-mono nb-text-muted" th:text="${acct.maskedAccountNumber}">••••1234</td>
+                    <td><span class="nb-badge nb-badge-secondary" th:text="'Account'">Checking</span></td>
+                    <td class="text-end nb-mono nb-amount-positive"
+                        th:text="'$' + ${#numbers.formatDecimal(acct.currentBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td><span class="nb-badge nb-badge-green">Available</span></td>
+                    <td class="text-center">
+                        <button class="nb-btn nb-btn-sm nb-btn-outline" disabled>
+                            <i class="bi bi-download me-1"></i>PDF
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="nb-card-body" style="border-top:1px solid var(--nb-border); padding:12px 20px;">
+            <div class="nb-alert nb-alert-info" style="margin:0;">
+                <i class="bi bi-info-circle"></i>
+                <span>PDF statement generation is coming soon. For statements older than 12 months, please contact your branch or call 1-800-NEXUS-BK.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- E-Statements enrollment -->
+    <div class="nb-card nb-fade-in nb-delay-3 mt-4">
+        <div class="nb-card-header">
+            <h2 class="nb-section-title mb-0"><i class="bi bi-envelope-check me-2"></i>E-Statement Enrollment</h2>
+            <span class="nb-badge nb-badge-green">Enrolled</span>
+        </div>
+        <div class="nb-card-body">
+            <p class="nb-text-muted" style="font-size:0.85rem; margin-bottom:12px;">
+                You are enrolled in paperless statements. Statements are available within 3 business days after each month-end.
+            </p>
+            <div style="display:flex; gap:10px;">
+                <button class="nb-btn nb-btn-outline" disabled><i class="bi bi-envelope me-1"></i>Update Email Preferences</button>
+                <button class="nb-btn nb-btn-outline" disabled><i class="bi bi-printer me-1"></i>Switch to Paper Statements</button>
+            </div>
+        </div>
+    </div>
+
+</th:block>
+</html>

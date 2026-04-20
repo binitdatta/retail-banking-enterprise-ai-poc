@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Loan Detail',activeNav='loans'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+  <!-- Breadcrumb -->
+  <nav class="nb-breadcrumb nb-fade-in">
+    <a th:href="@{/nexusbank/dashboard}" class="nb-link-muted">Dashboard</a>
+    <i class="bi bi-chevron-right"></i>
+    <a th:href="@{/nexusbank/loans}" class="nb-link-muted">Loans</a>
+    <i class="bi bi-chevron-right"></i>
+    <span th:text="${loan.loanNumber}">LN-0001</span>
+  </nav>
+
+  <!-- Loan Hero Card -->
+  <div class="nb-hero-card nb-fade-in nb-delay-1">
+    <div class="nb-hero-card-accent"
+         th:classappend="${loan.loanType.name().contains('MORTGAGE')} ? 'nb-bar-purple' :
+                           (${loan.loanType.name() == 'AUTO'} ? 'nb-bar-blue' :
+                           (${loan.loanType.name().startsWith('STUDENT')} ? 'nb-bar-teal' : 'nb-bar-gold'))"></div>
+    <div class="nb-hero-card-body">
+      <div class="nb-hero-top">
+        <div class="d-flex align-items-center gap-3">
+          <div class="nb-loan-icon-wrap-lg"
+               th:classappend="${loan.loanType.name().contains('MORTGAGE')} ? 'nb-icon-mortgage' :
+                                 (${loan.loanType.name() == 'AUTO'} ? 'nb-icon-auto' :
+                                 (${loan.loanType.name().startsWith('STUDENT')} ? 'nb-icon-student' : 'nb-icon-personal'))">
+            <i class="bi"
+               th:classappend="${loan.loanType.name().contains('MORTGAGE') or loan.loanType.name() == 'HELOC'} ? 'bi-house-fill' :
+                                 (${loan.loanType.name() == 'AUTO'} ? 'bi-car-front-fill' :
+                                 (${loan.loanType.name().startsWith('STUDENT')} ? 'bi-mortarboard-fill' : 'bi-cash-stack'))"></i>
+          </div>
+          <div>
+            <h1 class="nb-hero-title" th:text="${loan.loanProduct.productName}">Loan</h1>
+            <div class="nb-hero-subtitle">
+              <span class="nb-mono" th:text="${loan.loanNumber}">LN-0001</span>
+              <span class="nb-separator">|</span>
+              <span th:text="${loan.loanType.displayName}">Type</span>
+              <span class="nb-separator">|</span>
+              <span th:text="${loan.rateType.displayName}">Fixed</span>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex flex-column align-items-end gap-2">
+            <span class="nb-badge nb-badge-lg"
+                  th:classappend="${loan.loanStatus.name() == 'CURRENT'} ? 'nb-badge-green' :
+                                  (${loan.loanStatus.name() == 'PAID_OFF'} ? 'nb-badge-secondary' :
+                                  (${loan.loanStatus.name() == 'DELINQUENT'} ? 'nb-badge-danger' : 'nb-badge-warning'))"
+                  th:text="${loan.loanStatus.displayName}">Current</span>
+        </div>
+      </div>
+
+      <!-- Key Financials -->
+      <div class="nb-hero-balances mt-3">
+        <div class="nb-hero-bal-block">
+          <div class="nb-hero-bal-label">Outstanding Balance</div>
+          <div class="nb-hero-bal-value nb-amount-negative"
+               th:text="'$' + ${#numbers.formatDecimal(loan.outstandingBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+        </div>
+        <div class="nb-hero-bal-block">
+          <div class="nb-hero-bal-label">Monthly Payment</div>
+          <div class="nb-hero-bal-value nb-mono"
+               th:text="'$' + ${#numbers.formatDecimal(loan.monthlyPaymentAmount, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+        </div>
+        <div class="nb-hero-bal-block">
+          <div class="nb-hero-bal-label">Interest Rate</div>
+          <div class="nb-hero-bal-value nb-text-gold"
+               th:text="${#numbers.formatDecimal(loan.interestRate, 1, 'NONE', 3, 'POINT')} + '%'">0.000%</div>
+        </div>
+        <div class="nb-hero-bal-block">
+          <div class="nb-hero-bal-label">Payoff Amount</div>
+          <div class="nb-hero-bal-value nb-mono"
+               th:text="'$' + ${#numbers.formatDecimal(loan.payoffAmount, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+        </div>
+      </div>
+
+      <!-- Payoff Progress -->
+      <div class="mt-3">
+        <div class="nb-progress-label">
+          <span>$<span th:text="${#numbers.formatDecimal(loan.originalAmount.subtract(loan.outstandingBalance), 1, 'COMMA', 0, 'POINT')}">0</span> paid of $<span th:text="${#numbers.formatDecimal(loan.originalAmount, 1, 'COMMA', 0, 'POINT')}">0</span></span>
+          <span class="nb-text-gold fw-semibold" th:text="${loan.progressPercent} + '% paid off'">0%</span>
+        </div>
+        <div class="nb-progress-bar nb-progress-lg">
+          <div class="nb-progress-fill nb-progress-gold" th:style="'width: ' + ${loan.progressPercent} + '%'"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nb-grid-2 mt-4">
+
+    <!-- Left: Loan Details -->
+    <div>
+      <div class="nb-card nb-fade-in nb-delay-2">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-info-circle me-2"></i>Loan Details</h2>
+        </div>
+        <div class="nb-detail-grid">
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Origination Date</span>
+            <span class="nb-detail-value nb-mono" th:text="${#temporals.format(loan.originationDate, 'MMMM d, yyyy')}">Date</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Maturity Date</span>
+            <span class="nb-detail-value nb-mono" th:text="${#temporals.format(loan.maturityDate, 'MMMM d, yyyy')}">Date</span>
+          </div>
+          <div class="nb-detail-row" th:if="${loan.nextPaymentDate != null}">
+            <span class="nb-detail-label">Next Payment</span>
+            <span class="nb-detail-value nb-mono nb-text-gold" th:text="${#temporals.format(loan.nextPaymentDate, 'MMMM d, yyyy')}">Date</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Term</span>
+            <span class="nb-detail-value nb-mono" th:text="${loan.termMonths} + ' months'">0 months</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Original Amount</span>
+            <span class="nb-detail-value nb-mono" th:text="'$' + ${#numbers.formatDecimal(loan.originalAmount, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+          </div>
+          <div class="nb-detail-row" th:if="${loan.accruedInterest != null}">
+            <span class="nb-detail-label">Accrued Interest</span>
+            <span class="nb-detail-value nb-mono nb-amount-negative" th:text="'$' + ${#numbers.formatDecimal(loan.accruedInterest, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+          </div>
+          <div class="nb-detail-row" th:if="${loan.lateFeeBalance != null and loan.lateFeeBalance.compareTo(java.math.BigDecimal.ZERO) > 0}">
+            <span class="nb-detail-label">Late Fee Balance</span>
+            <span class="nb-detail-value nb-mono nb-amount-negative" th:text="'$' + ${#numbers.formatDecimal(loan.lateFeeBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+          </div>
+          <div class="nb-detail-row" th:if="${loan.disbursementDate != null}">
+            <span class="nb-detail-label">Disbursement Date</span>
+            <span class="nb-detail-value nb-mono" th:text="${#temporals.format(loan.disbursementDate, 'MMM d, yyyy')}">Date</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mortgage-specific Details -->
+      <div class="nb-card nb-fade-in nb-delay-3 mt-4" th:if="${mortgageDetail != null}">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-house-fill me-2"></i>Property Details</h2>
+        </div>
+        <div class="nb-detail-grid">
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Property Address</span>
+            <span class="nb-detail-value" th:text="${mortgageDetail.propertyAddress}">Address</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Property Type</span>
+            <span class="nb-detail-value" th:text="${mortgageDetail.propertyType.displayName}">Type</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Appraised Value</span>
+            <span class="nb-detail-value nb-mono" th:text="'$' + ${#numbers.formatDecimal(mortgageDetail.appraisedValue, 1, 'COMMA', 0, 'POINT')}">$0</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">LTV Ratio</span>
+            <span class="nb-detail-value nb-mono" th:text="${#numbers.formatDecimal(mortgageDetail.ltvRatio, 1, 'NONE', 1, 'POINT')} + '%'">0%</span>
+          </div>
+          <div class="nb-detail-row" th:if="${mortgageDetail.pmiRequired}">
+            <span class="nb-detail-label">PMI</span>
+            <span class="nb-detail-value"><span class="nb-badge nb-badge-warning">Required</span>
+                <span class="nb-mono ms-2" th:if="${mortgageDetail.pmiMonthlyPremium != null}"
+                      th:text="'$' + ${#numbers.formatDecimal(mortgageDetail.pmiMonthlyPremium, 1, 'COMMA', 2, 'POINT')} + '/mo'">$0.00/mo</span>
+              </span>
+          </div>
+          <div class="nb-detail-row" th:if="${mortgageDetail.escrowBalance != null}">
+            <span class="nb-detail-label">Escrow Balance</span>
+            <span class="nb-detail-value nb-mono" th:text="'$' + ${#numbers.formatDecimal(mortgageDetail.escrowBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+          </div>
+          <div class="nb-detail-row" th:if="${mortgageDetail.isArmLoan}">
+            <span class="nb-detail-label">ARM Initial Period</span>
+            <span class="nb-detail-value nb-mono" th:text="${mortgageDetail.armInitialPeriodMonths} + ' months'">Months</span>
+          </div>
+          <div class="nb-detail-row" th:if="${mortgageDetail.nextAdjustmentDate != null}">
+            <span class="nb-detail-label">Next Rate Adjustment</span>
+            <span class="nb-detail-value nb-mono nb-text-gold" th:text="${#temporals.format(mortgageDetail.nextAdjustmentDate, 'MMM d, yyyy')}">Date</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auto Loan Details -->
+      <div class="nb-card nb-fade-in nb-delay-3 mt-4" th:if="${autoDetail != null}">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-car-front-fill me-2"></i>Vehicle Details</h2>
+        </div>
+        <div class="nb-detail-grid">
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Vehicle</span>
+            <span class="nb-detail-value" th:text="${autoDetail.vehicleYear} + ' ' + ${autoDetail.vehicleMake} + ' ' + ${autoDetail.vehicleModel}">Vehicle</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">VIN</span>
+            <span class="nb-detail-value nb-mono" th:text="${autoDetail.vin}">VIN</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Trim / Color</span>
+            <span class="nb-detail-value" th:text="${autoDetail.vehicleTrim != null ? autoDetail.vehicleTrim : 'N/A'} + ' / ' + ${autoDetail.vehicleColor != null ? autoDetail.vehicleColor : 'N/A'}">--</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Purchase Price</span>
+            <span class="nb-detail-value nb-mono" th:text="'$' + ${#numbers.formatDecimal(autoDetail.purchasePrice, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Down Payment</span>
+            <span class="nb-detail-value nb-mono" th:text="'$' + ${#numbers.formatDecimal(autoDetail.downPayment, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">New / Used</span>
+            <span class="nb-detail-value"><span class="nb-badge" th:classappend="${autoDetail.isNew} ? 'nb-badge-green' : 'nb-badge-secondary'" th:text="${autoDetail.isNew ? 'New' : 'Used'}">New</span></span>
+          </div>
+          <div class="nb-detail-row" th:if="${autoDetail.gapInsurance}">
+            <span class="nb-detail-label">GAP Insurance</span>
+            <span class="nb-detail-value"><span class="nb-badge nb-badge-green">Active</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Student Loan Details -->
+      <div class="nb-card nb-fade-in nb-delay-3 mt-4" th:if="${studentDetail != null}">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-mortarboard-fill me-2"></i>Education Details</h2>
+        </div>
+        <div class="nb-detail-grid">
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Institution</span>
+            <span class="nb-detail-value" th:text="${studentDetail.institutionName}">University</span>
+          </div>
+          <div class="nb-detail-row" th:if="${studentDetail.degreeProgram != null}">
+            <span class="nb-detail-label">Degree / Program</span>
+            <span class="nb-detail-value" th:text="${studentDetail.degreeProgram}">Program</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Repayment Plan</span>
+            <span class="nb-detail-value" th:text="${studentDetail.repaymentPlan.displayName}">Standard</span>
+          </div>
+          <div class="nb-detail-row">
+            <span class="nb-detail-label">Loan Servicer</span>
+            <span class="nb-detail-value" th:text="${studentDetail.loanServicer != null ? studentDetail.loanServicer : 'NexusBank'}">Servicer</span>
+          </div>
+          <div class="nb-detail-row" th:if="${studentDetail.defermentEndDate != null}">
+            <span class="nb-detail-label">Deferment Ends</span>
+            <span class="nb-detail-value nb-mono nb-text-gold" th:text="${#temporals.format(studentDetail.defermentEndDate, 'MMM d, yyyy')}">Date</span>
+          </div>
+          <div class="nb-detail-row" th:if="${studentDetail.publicServiceEligible}">
+            <span class="nb-detail-label">PSLF Eligible</span>
+            <span class="nb-detail-value"><span class="nb-badge nb-badge-teal">Yes</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Amortization Schedule -->
+    <div>
+      <div class="nb-card nb-fade-in nb-delay-2">
+        <div class="nb-card-header">
+          <h2 class="nb-section-title mb-0"><i class="bi bi-table me-2"></i>Amortization Schedule</h2>
+          <span class="nb-badge nb-badge-secondary"
+                th:text="${paymentSchedule != null ? paymentSchedule.size() + ' payments' : '0 payments'}">0 payments</span>
+        </div>
+        <div class="nb-table-wrapper" style="max-height: 520px; overflow-y: auto;">
+          <table class="nb-table nb-table-sm">
+            <thead style="position: sticky; top: 0; z-index: 1;">
+            <tr>
+              <th>#</th>
+              <th>Due Date</th>
+              <th class="text-end">Payment</th>
+              <th class="text-end">Principal</th>
+              <th class="text-end">Interest</th>
+              <th class="text-end">Balance</th>
+              <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="pmt : ${paymentSchedule}"
+                th:classappend="${pmt.paymentStatus.name() == 'PAID'} ? 'nb-row-paid' :
+                                    (${pmt.paymentStatus.name() == 'OVERDUE'} ? 'nb-row-overdue' :
+                                    (${pmt.paymentStatus.name() == 'CURRENT'} ? 'nb-row-current' : ''))">
+              <td class="nb-mono nb-text-muted" th:text="${pmt.paymentNumber}">1</td>
+              <td class="nb-mono" th:text="${#temporals.format(pmt.dueDate, 'MMM yyyy')}">Date</td>
+              <td class="text-end nb-mono" th:text="'$' + ${#numbers.formatDecimal(pmt.scheduledPayment, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+              <td class="text-end nb-mono nb-text-green" th:text="'$' + ${#numbers.formatDecimal(pmt.principalAmount, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+              <td class="text-end nb-mono nb-amount-negative" th:text="'$' + ${#numbers.formatDecimal(pmt.interestAmount, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+              <td class="text-end nb-mono" th:text="'$' + ${#numbers.formatDecimal(pmt.remainingBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+              <td>
+                    <span class="nb-badge"
+                          th:classappend="${pmt.paymentStatus.name() == 'PAID'} ? 'nb-badge-secondary' :
+                                          (${pmt.paymentStatus.name() == 'OVERDUE'} ? 'nb-badge-danger' :
+                                          (${pmt.paymentStatus.name() == 'CURRENT'} ? 'nb-badge-gold' : 'nb-badge-secondary'))"
+                          th:text="${pmt.paymentStatus.displayName}">Status</span>
+              </td>
+            </tr>
+            <tr th:if="${paymentSchedule == null or paymentSchedule.isEmpty()}">
+              <td colspan="7" class="text-center nb-text-muted py-4">No payment schedule available.</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</th:block>
+</html>

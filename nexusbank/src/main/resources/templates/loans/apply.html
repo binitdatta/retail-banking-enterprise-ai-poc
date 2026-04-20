@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='Apply for Loan',activeNav='loans'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+    <div class="nb-page-header nb-fade-in">
+        <div>
+            <h1 class="nb-page-title"><i class="bi bi-plus-circle me-2"></i>Apply for a Loan</h1>
+            <p class="nb-page-subtitle">Choose a loan type and start your application</p>
+        </div>
+    </div>
+
+    <!-- Loan Product Cards -->
+    <div class="nb-grid-3 nb-fade-in nb-delay-1">
+
+        <div class="nb-card" style="cursor:pointer;" onclick="">
+            <div class="nb-acct-type-bar nb-bar-purple"></div>
+            <div class="nb-card-body" style="text-align:center; padding:28px 20px;">
+                <div class="nb-loan-icon-wrap-lg nb-icon-mortgage" style="margin:0 auto 16px;">
+                    <i class="bi bi-house-fill"></i>
+                </div>
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:6px;">Mortgage</h3>
+                <p class="nb-text-muted" style="font-size:0.82rem; margin-bottom:16px;">Purchase or refinance your home with competitive fixed and ARM rates starting from 6.25%.</p>
+                <div class="nb-grid-2" style="gap:8px; margin-bottom:20px;">
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Min Amount</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">$100,000</div>
+                    </div>
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Max Term</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">30 years</div>
+                    </div>
+                </div>
+                <a th:href="@{/loans/applications/mortgage/new}" class="nb-btn nb-btn-primary" style="width:100%; text-decoration:none; display:flex; align-items:center; justify-content:center;">
+                    Start Application <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="nb-card" style="cursor:pointer;">
+            <div class="nb-acct-type-bar nb-bar-blue"></div>
+            <div class="nb-card-body" style="text-align:center; padding:28px 20px;">
+                <div class="nb-loan-icon-wrap-lg nb-icon-auto" style="margin:0 auto 16px;">
+                    <i class="bi bi-car-front-fill"></i>
+                </div>
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:6px;">Auto Loan</h3>
+                <p class="nb-text-muted" style="font-size:0.82rem; margin-bottom:16px;">Finance your new or used vehicle with same-day approval decisions and rates from 4.99%.</p>
+                <div class="nb-grid-2" style="gap:8px; margin-bottom:20px;">
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Min Amount</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">$5,000</div>
+                    </div>
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Max Term</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">84 months</div>
+                    </div>
+                </div>
+                <button class="nb-btn nb-btn-primary" style="width:100%;" disabled>
+                    Start Application <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="nb-card" style="cursor:pointer;">
+            <div class="nb-acct-type-bar nb-bar-teal"></div>
+            <div class="nb-card-body" style="text-align:center; padding:28px 20px;">
+                <div class="nb-loan-icon-wrap-lg nb-icon-student" style="margin:0 auto 16px;">
+                    <i class="bi bi-mortarboard-fill"></i>
+                </div>
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:6px;">Student Loan</h3>
+                <p class="nb-text-muted" style="font-size:0.82rem; margin-bottom:16px;">Undergraduate, graduate, and refinancing options with flexible repayment plans from 3.99%.</p>
+                <div class="nb-grid-2" style="gap:8px; margin-bottom:20px;">
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Min Amount</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">$1,000</div>
+                    </div>
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Max Term</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">20 years</div>
+                    </div>
+                </div>
+                <button class="nb-btn nb-btn-primary" style="width:100%;" disabled>
+                    Start Application <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="nb-card" style="cursor:pointer;">
+            <div class="nb-acct-type-bar nb-bar-gold"></div>
+            <div class="nb-card-body" style="text-align:center; padding:28px 20px;">
+                <div class="nb-loan-icon-wrap-lg nb-icon-personal" style="margin:0 auto 16px;">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:6px;">Personal Loan</h3>
+                <p class="nb-text-muted" style="font-size:0.82rem; margin-bottom:16px;">No collateral required. Debt consolidation, home improvement, or any purpose. Rates from 7.99%.</p>
+                <div class="nb-grid-2" style="gap:8px; margin-bottom:20px;">
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Min Amount</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">$1,000</div>
+                    </div>
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Max Term</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">60 months</div>
+                    </div>
+                </div>
+                <button class="nb-btn nb-btn-primary" style="width:100%;" disabled>
+                    Start Application <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="nb-card" style="cursor:pointer;">
+            <div class="nb-acct-type-bar nb-bar-purple"></div>
+            <div class="nb-card-body" style="text-align:center; padding:28px 20px;">
+                <div class="nb-loan-icon-wrap-lg nb-icon-heloc" style="margin:0 auto 16px;">
+                    <i class="bi bi-house-door"></i>
+                </div>
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:6px;">HELOC</h3>
+                <p class="nb-text-muted" style="font-size:0.82rem; margin-bottom:16px;">Tap your home equity with a flexible revolving line of credit. Variable rates from Prime + 0.5%.</p>
+                <div class="nb-grid-2" style="gap:8px; margin-bottom:20px;">
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Min Amount</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">$25,000</div>
+                    </div>
+                    <div style="background:var(--nb-bg-elevated); border-radius:8px; padding:10px;">
+                        <div class="nb-text-muted" style="font-size:0.68rem; text-transform:uppercase;">Draw Period</div>
+                        <div class="nb-mono" style="font-size:0.9rem; font-weight:600;">10 years</div>
+                    </div>
+                </div>
+                <button class="nb-btn nb-btn-primary" style="width:100%;" disabled>
+                    Start Application <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Contact card -->
+        <div class="nb-card" style="background: linear-gradient(135deg, rgba(61,111,212,0.12), rgba(139,92,246,0.08)); border-color:rgba(61,111,212,0.3);">
+            <div class="nb-card-body" style="text-align:center; padding:28px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">
+                <i class="bi bi-person-lines-fill" style="font-size:2.5rem; color:var(--nb-blue-light); margin-bottom:16px;"></i>
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:8px;">Speak With a Banker</h3>
+                <p class="nb-text-muted" style="font-size:0.82rem; margin-bottom:20px;">Our lending specialists can help you find the right product and guide you through the full application process.</p>
+                <div style="font-size:1.1rem; font-weight:700; color:var(--nb-gold); margin-bottom:8px;">
+                    <i class="bi bi-telephone me-2"></i>1-800-NEXUS-BK
+                </div>
+                <div class="nb-text-muted" style="font-size:0.75rem;">Mon–Fri 8am–8pm EST · Sat 9am–5pm EST</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="nb-alert nb-alert-info nb-fade-in nb-delay-3 mt-4">
+        <i class="bi bi-info-circle"></i>
+        <span>Online loan applications are coming soon. All loan products are available now through any NexusBank branch or by calling our lending center.</span>
+    </div>
+
+</th:block>
+</html>

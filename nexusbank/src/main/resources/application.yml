@@ -1,0 +1,122 @@
+server:
+  port: 9099
+  servlet:
+    context-path: /nexusbank
+  error:
+    whitelabel:
+      enabled: false
+
+spring:
+  application:
+    name: nexusbank-platform
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/nexusbank_db
+    username: root
+    password: localroot
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: NexusBankHikariPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        default_batch_fetch_size: 20
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+    open-in-view: false
+
+  thymeleaf:
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+    prefix: classpath:/templates/
+    suffix: .html
+
+  # ─────────────────────────────────────────────────────────
+  # Spring Security OAuth2 Client — PKCE Authorization Code
+  # ─────────────────────────────────────────────────────────
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: nexusbank-ui
+            # Public PKCE client — tells Spring to send code_challenge + code_challenge_method=S256
+            client-authentication-method: none
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:9099/nexusbank/login/oauth2/code/keycloak"
+            scope:
+              - openid
+              - profile
+              - email
+              - roles
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8080/realms/nexusbank
+            user-name-attribute: preferred_username
+      # ─────────────────────────────────────────────────────
+      # Resource Server — JWT validation for REST API
+      # ─────────────────────────────────────────────────────
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/nexusbank
+          jwk-set-uri: http://localhost:8080/realms/nexusbank/protocol/openid-connect/certs
+
+# ─────────────────────────────────────────────────────────
+# NexusBank Application Settings
+# ─────────────────────────────────────────────────────────
+nexusbank:
+  keycloak:
+    realm: nexusbank
+    auth-server-url: http://localhost:8180
+    admin-client-id: nexusbank-admin-cli
+  security:
+    api-path-prefix: /api/v1
+    permitted-paths:
+      - /actuator/health
+      - /error
+      - /css/**
+      - /js/**
+      - /images/**
+      - /webjars/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.nexusbank: DEBUG
+    # ── Spring Security — shows auth decisions, token validation, role checks
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.security.oauth2.client: DEBUG
+    org.springframework.security.oauth2.server.resource: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    org.springframework.security.web.authentication: DEBUG
+    # ── Web — shows request mapping and dispatch
+    org.springframework.web: INFO
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+    # ── Hibernate — keep quiet to reduce noise
+    org.hibernate.SQL: WARN
+    org.hibernate.type: WARN
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"

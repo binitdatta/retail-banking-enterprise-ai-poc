@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: layout}"
+      th:with="pageTitle='My Accounts',activeNav='accounts'"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<th:block th:fragment="content">
+
+  <div class="nb-page-header nb-fade-in">
+    <div>
+      <h1 class="nb-page-title"><i class="bi bi-bank me-2"></i>My Accounts</h1>
+      <p class="nb-page-subtitle">All deposit and investment accounts</p>
+    </div>
+    <div class="nb-page-actions">
+      <span class="nb-badge nb-badge-gold" th:text="${accounts != null ? accounts.size() : 0} + ' accounts'">0 accounts</span>
+    </div>
+  </div>
+
+  <!-- Account Type Filter Tabs -->
+  <div class="nb-tab-bar nb-fade-in nb-delay-1">
+    <button class="nb-tab active" data-filter="ALL">All Accounts</button>
+    <button class="nb-tab" data-filter="CHECKING">Checking</button>
+    <button class="nb-tab" data-filter="SAVINGS">Savings</button>
+    <button class="nb-tab" data-filter="MONEY_MARKET">Money Market</button>
+    <button class="nb-tab" data-filter="CD">CDs</button>
+    <button class="nb-tab" data-filter="IRA">Retirement</button>
+  </div>
+
+  <!-- Summary Strip -->
+  <div class="nb-grid-3 nb-fade-in nb-delay-1">
+    <div class="nb-stat-card">
+      <div class="nb-stat-label">Total Available Balance</div>
+      <div class="nb-stat-value nb-amount-positive"
+           th:text="'$' + ${#numbers.formatDecimal(totalAvailable, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+    </div>
+    <div class="nb-stat-card">
+      <div class="nb-stat-label">Total Current Balance</div>
+      <div class="nb-stat-value" th:text="'$' + ${#numbers.formatDecimal(totalCurrent, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+    </div>
+    <div class="nb-stat-card">
+      <div class="nb-stat-label">Active Accounts</div>
+      <div class="nb-stat-value" th:text="${activeCount}">0</div>
+    </div>
+  </div>
+
+  <!-- Account Cards Grid -->
+  <div class="nb-grid-3 mt-4" id="accounts-grid">
+    <div th:each="acct, iStat : ${accounts}"
+         class="nb-account-card-full nb-fade-in"
+         th:classappend="'nb-delay-' + ${iStat.index % 4 + 1}"
+         th:data-type="${acct.accountProduct.productType.name()}">
+
+      <!-- Card Top Bar (color coded) -->
+      <div class="nb-acct-type-bar"
+           th:classappend="${acct.accountProduct.productType.name() == 'CHECKING'} ? 'nb-bar-blue' :
+                             (${acct.accountProduct.productType.name() == 'SAVINGS'} ? 'nb-bar-green' :
+                             (${acct.accountProduct.productType.name() == 'MONEY_MARKET'} ? 'nb-bar-purple' :
+                             (${acct.accountProduct.productType.name() == 'CD'} ? 'nb-bar-gold' : 'nb-bar-teal')))"></div>
+
+      <div class="nb-acct-card-inner">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <div class="nb-account-name" th:text="${acct.nickname != null ? acct.nickname : acct.accountProduct.productName}">Account</div>
+            <div class="nb-account-number nb-mono" th:text="${acct.maskedAccountNumber}">••••1234</div>
+          </div>
+          <span class="nb-badge"
+                th:classappend="${acct.accountStatus.name() == 'ACTIVE'} ? 'nb-badge-green' :
+                                  (${acct.accountStatus.name() == 'FROZEN'} ? 'nb-badge-warning' : 'nb-badge-secondary')"
+                th:text="${acct.accountStatus.displayName}">Active</span>
+        </div>
+
+        <div class="nb-acct-balance-block">
+          <div>
+            <div class="nb-acct-bal-label">Current Balance</div>
+            <div class="nb-acct-bal-amount nb-amount-positive"
+                 th:text="'$' + ${#numbers.formatDecimal(acct.currentBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+          </div>
+          <div>
+            <div class="nb-acct-bal-label">Available</div>
+            <div class="nb-acct-bal-amount nb-mono"
+                 th:text="'$' + ${#numbers.formatDecimal(acct.availableBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+          </div>
+        </div>
+
+        <div class="nb-acct-meta-row mt-3">
+          <div th:if="${acct.annualPercentageYield != null}">
+            <i class="bi bi-percent me-1 nb-text-gold"></i>
+            <span th:text="${#numbers.formatDecimal(acct.annualPercentageYield, 1, 'NONE', 2, 'POINT')} + '% APY'">0.00% APY</span>
+          </div>
+          <div th:if="${acct.overdraftProtection}">
+            <i class="bi bi-shield-check me-1 nb-text-green"></i>
+            <span>Overdraft Protection</span>
+          </div>
+          <div th:if="${acct.maturityDate != null}">
+            <i class="bi bi-calendar-check me-1 nb-text-muted"></i>
+            <span class="nb-mono" th:text="'Matures ' + ${#temporals.format(acct.maturityDate, 'MMM d, yyyy')}">Matures</span>
+          </div>
+        </div>
+
+        <div class="nb-acct-card-footer mt-3">
+            <span class="nb-text-muted" style="font-size:0.72rem;">
+              Opened <span class="nb-mono" th:text="${#temporals.format(acct.openedDate, 'MMM yyyy')}">Jan 2024</span>
+            </span>
+          <a th:href="@{/nexusbank/accounts/{id}(id=${acct.id})}" class="nb-btn nb-btn-sm nb-btn-primary">
+            View <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div th:if="${accounts == null or accounts.isEmpty()}" class="nb-empty-state" style="grid-column: 1/-1;">
+      <i class="bi bi-bank2"></i>
+      <p>No accounts found. Contact your NexusBank banker to open an account.</p>
+    </div>
+  </div>
+
+  <!-- Admin: All Customers Account Summary -->
+  <div sec:authorize="hasRole('NEXUS_ADMIN') or hasRole('NEXUS_BANKER')" class="nb-card nb-fade-in nb-delay-4 mt-5">
+    <div class="nb-card-header">
+      <h2 class="nb-section-title mb-0"><i class="bi bi-people me-2"></i>Portfolio Overview</h2>
+      <span class="nb-badge nb-badge-secondary">Staff View</span>
+    </div>
+    <div class="nb-table-wrapper">
+      <table class="nb-table">
+        <thead>
+        <tr>
+          <th>Account #</th>
+          <th>Customer</th>
+          <th>Product</th>
+          <th>Type</th>
+          <th class="text-end">Balance</th>
+          <th>Status</th>
+          <th>Opened</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="acct : ${allAccounts}">
+          <td class="nb-mono" th:text="${acct.maskedAccountNumber}">••••1234</td>
+          <td th:text="${acct.customer.fullName}">Name</td>
+          <td th:text="${acct.accountProduct.productName}">Product</td>
+          <td><span class="nb-badge nb-badge-secondary" th:text="${acct.accountProduct.productType.displayName}">Type</span></td>
+          <td class="text-end nb-mono nb-amount-positive"
+              th:text="'$' + ${#numbers.formatDecimal(acct.currentBalance, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+          <td><span class="nb-badge"
+                    th:classappend="${acct.accountStatus.name() == 'ACTIVE'} ? 'nb-badge-green' : 'nb-badge-warning'"
+                    th:text="${acct.accountStatus.displayName}">Active</span></td>
+          <td class="nb-mono nb-text-muted" th:text="${#temporals.format(acct.openedDate, 'MMM d, yyyy')}">Date</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</th:block>
+
+<script th:inline="javascript">
+  // Tab filter
+  document.querySelectorAll('.nb-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.nb-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      const filter = this.dataset.filter;
+      document.querySelectorAll('#accounts-grid [data-type]').forEach(card => {
+        card.style.display = (filter === 'ALL' || card.dataset.type === filter) ? '' : 'none';
+      });
+    });
+  });
+</script>
+</html>
